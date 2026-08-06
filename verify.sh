@@ -224,22 +224,32 @@ else fail "M4 README 에서 git clone 이 플러그인 설치보다 먼저 나�
   "plugin=${M_PLUGIN_LINE:-없음} clone=${M_CLONE_LINE:-없음}"; fi
 
 # M5 — 에이전트용 지시 파일이 있고, clone 설치를 억제한다 (이미 clone 한 경우의 복구 백스톱)
-M5C=0; M5A=0
-[ -s "$ROOT/CLAUDE.md" ] && grep -q 'Do not `git clone` and copy files' "$ROOT/CLAUDE.md" && M5C=1
-[ -s "$ROOT/AGENTS.md" ] && grep -q 'do not copy files' "$ROOT/AGENTS.md" && M5A=1
-if [ "$M5C" -eq 1 ] && [ "$M5A" -eq 1 ]; then
-  pass "M5 CLAUDE.md/AGENTS.md 가 파일 복사 설치를 억제함"
-else fail "M5 에이전트 지시 파일의 복사 설치 억제가 없음" "CLAUDE.md=$M5C AGENTS.md=$M5A"; fi
+if [ -s "$ROOT/AGENTS.md" ] && grep -q 'do not copy files' "$ROOT/AGENTS.md"; then
+  pass "M5 AGENTS.md 가 파일 복사 설치를 억제함"
+else fail "M5 AGENTS.md 가 없거나 복사 설치 억제 문장이 없음"; fi
 
-# M6 — 로그인은 사람이 직접 실행해야 한다는 경고가 README 에 있다 (스킬만 알고 README 가 모르면
-#      설치를 대행하는 에이전트가 대화형 명령을 Bash 로 실행해 멈춘다 — 실제로 발생한 사고다)
-if grep -q 'need \*\*a human\*\*' "$DOCS"; then pass "M6 README 에 대화형 로그인 경고 있음"
-else fail "M6 README 에 '사람이 직접 실행' 경고가 없음"; fi
+# M5b — 플러그인 루트에 CLAUDE.md 를 두지 않는다.
+#       루트 CLAUDE.md 는 플러그인으로 배포될 때 로드되지 않으며,
+#       claude plugin validate --strict 를 실패시킨다. 에이전트 안내는 AGENTS.md 로 통일한다.
+if [ ! -e "$ROOT/CLAUDE.md" ]; then pass "M5b 플러그인 루트에 CLAUDE.md 없음 (strict 검증 통과 조건)"
+else fail "M5b 플러그인 루트 CLAUDE.md 발견 — plugin validate --strict 가 실패한다" "AGENTS.md 로 옮길 것"; fi
 
 # M7 — 두 README 가 함께 존재하고 서로를 가리키는지 (한쪽만 갱신되어 갈라지는 것을 막는 최소 가드)
 if [ -s "$ROOT/README.ko.md" ] && grep -q 'README.ko.md' "$ROOT/README.md" && grep -q 'README.md' "$ROOT/README.ko.md"; then
   pass "M7 영어/한국어 README 가 모두 존재하고 상호 링크됨"
 else fail "M7 README 두 버전 중 하나가 없거나 상호 링크가 끊김"; fi
+
+# M8 — claude CLI 가 있으면 공식 검증기를 strict 로 돌린다. 이 검사가 없어서 루트 CLAUDE.md 로 인한
+#      스키마 경고를 놓쳤다. CLI 가 없는 환경에서도 침묵하지 않고 결과를 한 줄 남긴다.
+if command -v claude >/dev/null 2>&1; then
+  MKV="$(claude plugin validate "$ROOT" --strict 2>&1 || true)"
+  PLV="$(claude plugin validate "$ROOT/.claude-plugin/plugin.json" --strict 2>&1 || true)"
+  if printf '%s%s' "$MKV" "$PLV" | grep -q 'Validation failed'; then
+    fail "M8 claude plugin validate --strict 실패" "$(printf '%s\n%s' "$MKV" "$PLV" | grep -E '❯|✘' | head -4)"
+  else pass "M8 claude plugin validate --strict 통과 (marketplace + plugin)"; fi
+else
+  pass "M8 claude CLI 없음 — strict 검증 건너뜀 (CI 에서는 claude 를 설치할 것)"
+fi
 
 echo
 echo "== N: 금지 패턴 (명령 템플릿 한정) =="

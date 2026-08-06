@@ -1,5 +1,9 @@
 # For agents working with this repository
 
+*(This file is the single place for agent guidance. There is deliberately no `CLAUDE.md` at the
+repository root - Claude Code discovers `AGENTS.md` too, and a root `CLAUDE.md` is not loaded when
+this ships as a plugin, which makes `claude plugin validate --strict` fail.)*
+
 This repository is a **Claude Code plugin marketplace containing one skill**. It is not a codebase to
 build, and not a directory of files to copy into place.
 

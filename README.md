@@ -168,6 +168,7 @@ skills/jira-acli/
   references/               procedures (read, transition, write, Confluence, redaction, value safety, command map, errors, config)
   templates/                4 templates for text bound for Jira/Confluence
   scripts/scan-sensitive.sh internal-detail scanner
+AGENTS.md                   guidance for agents installing or editing this repository
 verify.sh                   self-check for the skill tree (read-only, no Jira calls)
 ```
 
