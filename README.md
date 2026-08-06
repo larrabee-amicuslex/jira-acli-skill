@@ -30,6 +30,18 @@ Claude Code 스킬입니다. 실제 실행은 Atlassian 공식 CLI인 `acli` 가
 
 ---
 
+## 필요한 것
+
+| | |
+|---|---|
+| Claude Code | 스킬이 동작하는 환경 |
+| `acli` | Atlassian 공식 CLI. 아래 1단계에서 설치합니다 (확인된 동작 버전 `1.3.22-stable`) |
+| Jira 계정 | 브라우저로 로그인할 수 있으면 됩니다. **API 토큰은 필요 없습니다** |
+
+Jira Cloud 기준입니다. 특정 사이트·프로젝트에 묶여 있지 않으므로 어느 조직에서나 그대로 씁니다.
+
+---
+
 ## 설치
 
 ### 1. acli 설치
@@ -73,16 +85,13 @@ Claude Code에서 **명령 두 줄**이면 됩니다.
 /plugin install jira-acli@jira-acli-skill
 ```
 
-비공개 저장소이므로 GitHub 접근 권한이 필요합니다. `git clone` 이 되는 계정이면 그대로 설치됩니다.
-권한이 없다는 오류가 나면 저장소 소유자에게 접근 요청을 하세요.
-
 설치 후 Claude Code에서 그냥 "지라 이슈 하나 봐줘" 라고 해보면 동작을 확인할 수 있습니다.
 
 <details>
 <summary>플러그인을 쓰지 않고 파일로 직접 설치하려면</summary>
 
 ```bash
-git clone <이 저장소 주소> /tmp/jira-acli-skill
+git clone https://github.com/larrabee-amicuslex/jira-acli-skill.git /tmp/jira-acli-skill
 mkdir -p ~/.claude/skills
 cp -R /tmp/jira-acli-skill/skills/jira-acli ~/.claude/skills/
 chmod +x ~/.claude/skills/jira-acli/scripts/scan-sensitive.sh
