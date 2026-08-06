@@ -173,6 +173,66 @@ if [ -z "$KEYS" ]; then pass "G4 예시 작업항목 키는 자리표시자(PROJ
 else fail "G4 실제처럼 보이는 작업항목 키 발견" "$KEYS"; fi
 
 echo
+echo "== M: 설치 경로 (배포물 정합성) =="
+# 스킬 본문은 촘촘히 검사되는데 설치 경로에는 검사가 없었다. 여기가 틀리면 사용자가 처음 만나는
+# 안내가 조용히 거짓이 된다 — 스킬이 아무리 정확해도 설치가 안 되면 소용이 없다.
+MJ="$(python3 - "$ROOT" <<'PYM' 2>/dev/null || echo "PYERR"
+import io, json, os, sys
+root = sys.argv[1]
+try:
+    mk = json.load(io.open(os.path.join(root, '.claude-plugin/marketplace.json'), encoding='utf-8'))
+    pl = json.load(io.open(os.path.join(root, '.claude-plugin/plugin.json'), encoding='utf-8'))
+except Exception as e:
+    print("READERR %s" % e); raise SystemExit
+mkname = mk.get('name', '')
+plname = pl.get('name', '')
+entry  = (mk.get('plugins') or [{}])[0].get('name', '')
+skills = pl.get('skills', '')
+skills_ok = os.path.isdir(os.path.join(root, skills.lstrip('./'))) if skills else False
+readme = io.open(os.path.join(root, 'README.md'), encoding='utf-8').read()
+install = '%s@%s' % (plname, mkname)
+print('%s|%s|%s|%s|%s' % (install, 'yes' if install in readme else 'no',
+                          'yes' if entry == plname else 'no',
+                          'yes' if skills_ok else 'no', skills))
+PYM
+)"
+if [ "$MJ" = "PYERR" ] || [ -z "$MJ" ]; then fail "M0 매니페스트 파싱 실패"
+else
+  M_INSTALL="$(printf '%s' "$MJ" | cut -d'|' -f1)"
+  M_INREADME="$(printf '%s' "$MJ" | cut -d'|' -f2)"
+  M_NAMEOK="$(printf '%s' "$MJ" | cut -d'|' -f3)"
+  M_SKILLSOK="$(printf '%s' "$MJ" | cut -d'|' -f4)"
+  M_SKILLSDIR="$(printf '%s' "$MJ" | cut -d'|' -f5)"
+  if [ "$M_INREADME" = "yes" ]; then pass "M1 README 설치 문자열이 매니페스트와 일치 ($M_INSTALL)"
+  else fail "M1 README 에 설치 문자열이 없거나 매니페스트와 어긋남" "기대: $M_INSTALL"; fi
+
+  if [ "$M_NAMEOK" = "yes" ]; then pass "M2 marketplace 항목 이름 == plugin.json name"
+  else fail "M2 marketplace.plugins[0].name 과 plugin.json name 불일치"; fi
+
+  if [ "$M_SKILLSOK" = "yes" ]; then pass "M3 plugin.json 의 skills 경로가 실재 ($M_SKILLSDIR)"
+  else fail "M3 plugin.json 의 skills 경로가 없는 디렉터리" "$M_SKILLSDIR"; fi
+fi
+
+# M4 — README 에서 플러그인 설치가 git clone 보다 먼저 나와야 한다.
+#      에이전트는 "실행 가능한 첫 완결 레시피"를 고른다. clone 이 먼저 나오면 그쪽으로 간다.
+M_PLUGIN_LINE="$(grep -n 'claude plugin marketplace add' "$DOCS" | head -1 | cut -d: -f1 || true)"
+M_CLONE_LINE="$(grep -n 'git clone' "$DOCS" | head -1 | cut -d: -f1 || true)"
+if [ -n "$M_PLUGIN_LINE" ] && { [ -z "$M_CLONE_LINE" ] || [ "$M_PLUGIN_LINE" -lt "$M_CLONE_LINE" ]; }; then
+  pass "M4 README 에서 플러그인 설치가 git clone 보다 먼저 나옴"
+else fail "M4 README 에서 git clone 이 플러그인 설치보다 먼저 나옴 (에이전트가 clone 으로 샌다)" \
+  "plugin=${M_PLUGIN_LINE:-없음} clone=${M_CLONE_LINE:-없음}"; fi
+
+# M5 — 에이전트용 지시 파일이 있고, clone 설치를 억제한다 (이미 clone 한 경우의 복구 백스톱)
+if [ -s "$ROOT/CLAUDE.md" ] && grep -q '복사하지 말고' "$ROOT/CLAUDE.md"; then
+  pass "M5 CLAUDE.md 가 파일 복사 설치를 억제함"
+else fail "M5 CLAUDE.md 가 없거나 복사 설치 억제 문장이 없음"; fi
+
+# M6 — 로그인은 사람이 직접 실행해야 한다는 경고가 README 에 있다 (스킬만 알고 README 가 모르면
+#      설치를 대행하는 에이전트가 대화형 명령을 Bash 로 실행해 멈춘다 — 실제로 발생한 사고다)
+if grep -q '사람이 직접' "$DOCS"; then pass "M6 README 에 대화형 로그인 경고 있음"
+else fail "M6 README 에 '사람이 직접 실행' 경고가 없음"; fi
+
+echo
 echo "== N: 금지 패턴 (명령 템플릿 한정) =="
 SPANS="$(grep -rhoE 'acli [^`]*' "$SKILL" | sed 's/[[:space:]]*$//' | sort -u || true)"
 span_must_not() { # <라벨> <ERE>
