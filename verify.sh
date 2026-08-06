@@ -224,15 +224,21 @@ else fail "M4 README 에서 git clone 이 플러그인 설치보다 먼저 나�
   "plugin=${M_PLUGIN_LINE:-없음} clone=${M_CLONE_LINE:-없음}"; fi
 
 # M5 — 에이전트용 지시 파일이 있고, clone 설치를 억제한다 (이미 clone 한 경우의 복구 백스톱)
-if [ -s "$ROOT/AGENTS.md" ] && grep -q 'do not copy files' "$ROOT/AGENTS.md"; then
-  pass "M5 AGENTS.md 가 파일 복사 설치를 억제함"
-else fail "M5 AGENTS.md 가 없거나 복사 설치 억제 문장이 없음"; fi
+# M5 — 에이전트용 설치 안내는 별도 파일이 아니라 README 안에 있어야 한다.
+#      별도 지시 파일(CLAUDE.md/AGENTS.md)은 플러그인 배포물에 두지 않는다(M5b).
+if grep -q 'If you are an agent installing this' "$DOCS"; then
+  pass "M5 README 에 에이전트용 설치 안내가 있음"
+else fail "M5 README 에 에이전트용 설치 안내가 없음 (에이전트가 clone 으로 샌다)"; fi
 
 # M5b — 플러그인 루트에 CLAUDE.md 를 두지 않는다.
-#       루트 CLAUDE.md 는 플러그인으로 배포될 때 로드되지 않으며,
-#       claude plugin validate --strict 를 실패시킨다. 에이전트 안내는 AGENTS.md 로 통일한다.
-if [ ! -e "$ROOT/CLAUDE.md" ]; then pass "M5b 플러그인 루트에 CLAUDE.md 없음 (strict 검증 통과 조건)"
-else fail "M5b 플러그인 루트 CLAUDE.md 발견 — plugin validate --strict 가 실패한다" "AGENTS.md 로 옮길 것"; fi
+#       루트 CLAUDE.md 는 plugin validate --strict 를 실제로 실패시킨다(확인됨).
+#       AGENTS.md 는 strict 를 실패시키지는 않지만, 플러그인으로 배포될 때 로드되지 않는 것은
+#       마찬가지여서 배포물에 두지 않는다. 에이전트 안내는 README 에 둔다.
+M5B=""
+[ -e "$ROOT/CLAUDE.md" ] && M5B="$M5B CLAUDE.md"
+[ -e "$ROOT/AGENTS.md" ] && M5B="$M5B AGENTS.md"
+if [ -z "$M5B" ]; then pass "M5b 플러그인 루트에 CLAUDE.md/AGENTS.md 없음 (strict 검증 통과 조건)"
+else fail "M5b 플러그인 루트에 지시 파일 발견 (배포 시 로드되지 않음; CLAUDE.md 는 strict 도 실패시킴)" "$M5B — 안내는 README 로"; fi
 
 # M7 — 두 README 가 함께 존재하고 서로를 가리키는지 (한쪽만 갱신되어 갈라지는 것을 막는 최소 가드)
 if [ -s "$ROOT/README.ko.md" ] && grep -q 'README.ko.md' "$ROOT/README.md" && grep -q 'README.md' "$ROOT/README.ko.md"; then

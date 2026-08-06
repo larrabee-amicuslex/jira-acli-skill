@@ -162,7 +162,6 @@ skills/jira-acli/
   references/               절차 (읽기·상태변경·쓰기·Confluence·정보차단·값검사·명령표·오류·설정)
   templates/                Jira·Confluence에 들어갈 문장 템플릿 4종
   scripts/scan-sensitive.sh 내부 정보 검사기
-AGENTS.md                   이 저장소를 설치·수정하는 에이전트용 안내
 verify.sh                   스킬 트리 자체 검증 (읽기 전용, Jira 호출 없음)
 ```
 
