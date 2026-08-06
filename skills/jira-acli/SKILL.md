@@ -9,12 +9,16 @@ description: >-
   statuses are all read from the user's own authenticated acli at run time - nothing is
   hardcoded, so it works on any Jira site or project. Prefer this over a raw jira-cli / JQL
   command reference when the user wants the Jira action done for them rather than to see
-  command syntax. Answers in the user's own language; Korean-first for Korean requests.
+  command syntax. Also reads Confluence pages, spaces and blog posts, and can publish a blog
+  post - but not create or edit pages, which acli has no command for. Answers in the user's
+  own language; Korean-first for Korean requests.
 when_to_use: >-
   "지라 이슈 봐줘", "이 티켓 내용이랑 첨부 정리해줘", "이슈 상태 바꿔줘", "진행 중으로 옮겨줘",
   "완료 처리해줘", "지라에 코멘트 남겨줘", "지라에 요청 하나 올려줘", "버그 신고해줘",
-  "첨부파일 뭐 있는지 알려줘", "check this Jira ticket", "move this issue to done",
-  "comment on this ticket", "file a Jira issue", "what is attached to this issue".
+  "첨부파일 뭐 있는지 알려줘", "컨플루언스 이 페이지 내용 정리해줘", "공간 목록 보여줘",
+  "블로그 글 하나 올려줘", "check this Jira ticket", "move this issue to done",
+  "comment on this ticket", "file a Jira issue", "what is attached to this issue",
+  "read this Confluence page", "post a Confluence blog".
 user-invocable: true
 ---
 
@@ -75,6 +79,7 @@ acli jira auth status
 | "코멘트 남겨줘", "이슈 하나 만들어줘", "제목이나 설명 고쳐줘" | `references/write.md` |
 | Jira에 들어갈 문장을 쓰기 직전 (항상) | `references/redaction.md` |
 | 사용자가 준 값(키·상태 이름·제목)을 명령에 끼워 넣기 직전 (항상) | `references/value-safety.md` |
+| "컨플루언스 문서 봐줘", "이 페이지 정리해줘", "공간 목록", "블로그 글 올려줘" | `references/confluence.md` |
 | 명령 형태·플래그·CLI 함정이 헷갈릴 때 | `references/command-map.md` |
 | 오류가 났을 때 | `references/errors.md` |
 | 어떤 값을 어디서 얻는지 (사이트/프로젝트/유형/상태) | `references/config.md` |
@@ -134,6 +139,20 @@ acli jira workitem create --project "<your-project>" --type "<TYPE>" --summary "
 
 ---
 
+### (5) Confluence — 읽기는 되고, 쓰기는 블로그 글 하나뿐
+
+```bash
+acli confluence page view --id <PAGE_ID> --json     # 페이지 (ID를 알아야 합니다)
+acli confluence space list --json                   # 공간 목록 (키 → ID)
+acli confluence blog list --space-id <SPACE_ID> --json
+```
+
+**페이지를 만들거나 고치는 명령은 없습니다.** 문서를 새로 쓰거나 고쳐 달라는 요청은 받아들이지 말고
+브라우저로 안내합니다. 쓸 수 있는 건 `blog create` 하나이며 확인 게이트가 필수입니다.
+Jira와 **로그인이 별개**입니다. 전체 절차와 한계: `references/confluence.md`
+
+---
+
 ## 3. 솔직하게 말해야 하는 한계 (숨기지 말 것)
 
 이 네 가지는 `acli` 가 **할 수 없는 일**입니다. 되는 척하지 말고 사용자에게 그대로 말합니다.
@@ -162,6 +181,7 @@ jira-acli/
   references/
     entry-check.md                진입 점검이 통과하지 못했을 때: 설치·로그인·계정 전환 안내 (P1, P5)
     value-safety.md               사용자에게서 온 값을 명령에 넣기 전 검사 규칙 (정본)
+    confluence.md                 Confluence 읽기·블로그 작성 절차와 한계
     read.md                       읽기 절차: 본문·코멘트·첨부·검색
     transition.md                 상태 변경 절차 (조회 → 선택 → 문구 → 확인 → 실행)
     write.md                      쓰기 절차와 확인 게이트: 코멘트/생성/수정 (P2, P6)
@@ -173,6 +193,7 @@ jira-acli/
     transition-note.md            상태 변경 알림 문구 템플릿
     comment.md                    일반 코멘트 템플릿
     workitem-create.md            새 작업 항목 템플릿
+    blog-post.md                  Confluence 블로그 글 템플릿
   scripts/
     scan-sensitive.sh             초안 문장에서 내부 정보 흔적을 찾아내는 검사기
 ```

@@ -58,9 +58,11 @@ references/command-map.md
 references/errors.md
 references/config.md
 references/value-safety.md
+references/confluence.md
 templates/transition-note.md
 templates/comment.md
 templates/workitem-create.md
+templates/blog-post.md
 scripts/scan-sensitive.sh
 "
 for f in $REQUIRED; do
@@ -201,12 +203,34 @@ HARD="$(grep -rnE '\|[[:space:]]*[0-9]{1,3}[[:space:]]*\|[^|]*(해야 할 일|�
 if [ -z "$HARD" ]; then pass "N12 상태 ID/상태명 하드코딩 표 없음 (jira-cli 안티패턴)"
 else fail "N12 상태 ID 표로 보이는 블록 발견" "$HARD"; fi
 
+# N13~N15 — Confluence: 존재하지 않는 명령을 지어내지 않는다.
+#   acli confluence page 에는 view 하나뿐이고, blog 에는 create/list/view 뿐이다(1.3.22-stable 관측).
+#   문서에 없는 명령이 적히면 모델이 그걸 실행하려 든다 — 스킬이 거짓말을 하는 가장 흔한 경로다.
+span_must_not "N13 confluence page 에 view 외 명령 없음 (생성·수정 명령 자체가 없음)" \
+  'confluence page +(create|edit|update|delete|remove|add|move|copy)'
+span_must_not "N14 confluence blog 에 create/list/view 외 명령 없음" \
+  'confluence blog +(edit|update|delete|remove|archive|restore)'
+# space 를 바꾸는 명령은 존재하지만 이 스킬은 쓰지 않는다(조직 전체에 영향을 주는 관리자 작업).
+span_must_not "N15 confluence space 를 바꾸는 관리자 명령 미사용" \
+  'confluence space +(create|archive|restore|update|delete)'
+# 본문은 항상 파일로 넘긴다. --body 는 명령줄에 XHTML 을 그대로 넣어 따옴표/줄바꿈에서 깨진다.
+span_must_not "N16 blog create 는 --body 직접 사용 안 함 (--from-file 강제)" \
+  'confluence blog create[^|]*--body '
+
 echo
 echo "== P: 반드시 있어야 할 것 =="
 p_has() { # <라벨> <파일> <ERE>
   if grep -qE -- "$3" "$SKILL/$2"; then pass "P $1"
   else fail "P $1" "$2 에서 찾지 못함: $3"; fi
 }
+# P17~P22 — Confluence 절차가 실제로 문서에 있는가 (없는데 라우팅만 되면 모델이 지어낸다)
+p_has "P17 confluence 페이지 읽기 명령"       references/confluence.md 'acli confluence page view --id'
+p_has "P18 confluence 공간 목록(키→ID) 명령"  references/confluence.md 'acli confluence space list'
+p_has "P19 confluence 블로그 작성 명령"       references/confluence.md 'acli confluence blog create'
+p_has "P20 blog 본문은 파일로 넘김"           references/confluence.md '\-\-from-file'
+p_has "P21 페이지 생성·수정 불가를 고백"      references/confluence.md '페이지를 만들 수도, 고칠 수도 없습니다'
+p_has "P22 Jira 와 별개 로그인임을 명시"      references/confluence.md 'acli confluence auth status'
+
 p_has "P1 진입점검: acli --version"          references/entry-check.md 'acli --version'
 p_has "P2 진입점검: acli jira auth status"   references/entry-check.md 'acli jira auth status'
 # P1b/P2b — 해피패스가 SKILL.md 에 직접 있어야 한다. 이게 없으면 모델은 두 줄을 알아내려고
@@ -227,7 +251,7 @@ p_has "P13 첨부: 다운로드 불가 명시"          references/read.md '내�
 p_has "P14 한계: 전이 목록 조회 불가 명시"     SKILL.md '갈 수 있는 상태'
 p_has "P15 근거: 버전 명시"                   SKILL.md '1\.3\.22-stable'
 
-for f in entry-check read transition write redaction command-map errors config value-safety; do
+for f in entry-check read transition write redaction command-map errors config value-safety confluence; do
   if grep -q "references/$f.md" "$SKILL/SKILL.md"; then pass "P16 SKILL.md 가 references/$f.md 를 안내"
   else fail "P16 SKILL.md 에 references/$f.md 안내 없음"; fi
 done
