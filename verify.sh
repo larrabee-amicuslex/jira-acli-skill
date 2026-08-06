@@ -226,9 +226,22 @@ else fail "M4 README 에서 git clone 이 플러그인 설치보다 먼저 나�
 # M5 — 에이전트용 지시 파일이 있고, clone 설치를 억제한다 (이미 clone 한 경우의 복구 백스톱)
 # M5 — 에이전트용 설치 안내는 별도 파일이 아니라 README 안에 있어야 한다.
 #      별도 지시 파일(CLAUDE.md/AGENTS.md)은 플러그인 배포물에 두지 않는다(M5b).
-if grep -q 'If you are an agent installing this' "$DOCS"; then
-  pass "M5 README 에 에이전트용 설치 안내가 있음"
-else fail "M5 README 에 에이전트용 설치 안내가 없음 (에이전트가 clone 으로 샌다)"; fi
+# M5 — 에이전트용 안내는 "설명하라"가 아니라 "실행하라"여야 한다.
+#      현장에서 에이전트가 README 를 읽고 명령을 출력만 한 채 설치하지 않은 사례가 있었다.
+M5A=0; M5B2=0
+grep -q 'installing it is the task' "$DOCS" && M5A=1
+grep -q 'Do not merely print them' "$DOCS" && M5B2=1
+if [ "$M5A" -eq 1 ] && [ "$M5B2" -eq 1 ]; then
+  pass "M5 README 가 에이전트에게 설명이 아니라 실행을 지시함"
+else fail "M5 에이전트 지시가 약함 — 출력만 하고 설치하지 않는 사고가 재발한다" "task=$M5A print=$M5B2"; fi
+
+# M11 — 설치 안내가 macOS 에만 치우치지 않는지. 윈도우 사용자에게 brew 를 안내한 사고가 있었다.
+M11=0
+grep -q 'winget' "$DOCS" && M11=$((M11+1))
+grep -q 'brew install acli' "$DOCS" && M11=$((M11+1))
+grep -q 'install-acli' "$DOCS" && M11=$((M11+1))
+if [ "$M11" -eq 3 ]; then pass "M11 acli 설치 안내가 macOS/Windows/그 외를 모두 다룸"
+else fail "M11 설치 안내 플랫폼 커버리지 부족 (brew 만 안내하면 윈도우에서 막힌다)" "충족 $M11/3"; fi
 
 # M5b — 플러그인 루트에 CLAUDE.md 를 두지 않는다.
 #       루트 CLAUDE.md 는 plugin validate --strict 를 실제로 실패시킨다(확인됨).

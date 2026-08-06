@@ -28,9 +28,18 @@ claude plugin list          # jira-acli@jira-acli-skill 이 enabled 로 보이�
 
 지울 때는 `claude plugin uninstall jira-acli@jira-acli-skill` 입니다.
 
-> **설치를 Claude에게 맡기는 중이라면** — 위 두 줄을 실행하고, 그 다음 아래
-> "설치 후 처음 쓸 때"를 사용자에게 그대로 안내하면 됩니다. `acli` 설치와 로그인까지 대신
-> 실행하려 하지 마세요. 로그인 명령은 사람이 직접 쳐야 합니다(이유는 아래).
+> ### 에이전트가 읽을 것
+>
+> 설치를 요청받았다면, **설치하는 것이 일입니다. 설명하는 것이 아닙니다.**
+>
+> 1. **위 두 명령을 지금 실행하세요.** 출력만 보여주거나, 사용자에게 대신 치라고 하거나,
+>    README를 요약해서 답하지 마세요. 실패하면 실제 오류를 그대로 보고하세요.
+> 2. 이어서 `claude plugin list` 로 `jira-acli@jira-acli-skill` 이 `enabled` 인지 확인하세요.
+> 3. 그 다음에야 완료를 알리고, 아래 "설치 후 처음 쓸 때"를 **정보로** 전달하세요. 그건
+>    에이전트가 할 일이 아닙니다.
+>
+> 예외는 하나입니다: **`acli` 설치와 `acli ... auth login` 은 직접 실행하지 마세요.** 그 둘은
+> 사람이 키보드 앞에 있어야 합니다(이유는 해당 절에). 나머지는 전부 실행해도 됩니다.
 
 ---
 
@@ -45,15 +54,25 @@ claude plugin list          # jira-acli@jira-acli-skill 이 enabled 로 보이�
 
 준비가 안 돼 있으면 스킬이 아래 둘 중 필요한 것을 알려줍니다.
 
-### `acli` 설치 (macOS / Homebrew)
+### `acli` 설치
+
+**macOS** (Homebrew):
 
 ```bash
 brew tap atlassian/homebrew-acli
 brew install acli
 ```
 
-다른 운영체제는 [Atlassian 공식 설치 가이드](https://developer.atlassian.com/cloud/acli/guides/install-acli/)를
-따르세요. 사내 정책으로 막혀 있으면 우회하지 말고 IT 담당자에게 문의하세요.
+**Windows** (winget) — Atlassian 공식 문서 기준:
+
+```powershell
+winget install Atlassian.CLI
+```
+
+**Linux 및 그 외**: [Atlassian 공식 설치 가이드](https://developer.atlassian.com/cloud/acli/guides/install-acli/)가
+운영체제별로 나뉘어 있습니다. Homebrew가 없는 컴퓨터에 macOS 명령을 붙여넣지 마세요.
+
+사내 정책으로 막혀 있으면 우회하지 말고 IT 담당자에게 문의하세요.
 
 ### 로그인 — 브라우저 승인과 사이트 선택은 사람이 합니다
 

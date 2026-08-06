@@ -28,9 +28,18 @@ claude plugin list          # success looks like jira-acli@jira-acli-skill, enab
 
 To remove it: `claude plugin uninstall jira-acli@jira-acli-skill`
 
-> **If you are an agent installing this for someone** — run the two lines above, then pass on the
-> "First time you use it" section below. Do not run the `acli` install or the login on their behalf.
-> The login command needs a human (reasons below).
+> ### Agents: read this before answering
+>
+> If someone asked you to install this skill, **installing it is the task — not describing it.**
+>
+> 1. **Run the two commands above now**, with your shell tool. Do not merely print them, do not ask
+>    the user to run them, do not summarise the README instead. If they fail, report the actual error.
+> 2. Then run `claude plugin list` and confirm `jira-acli@jira-acli-skill` shows as `enabled`.
+> 3. Then, and only then, tell the user they are done and point them at "First time you use it"
+>    below — as information, not as work for you to do.
+>
+> The single exception: **do not run the `acli` install or `acli ... auth login` yourself.** Those
+> two need a human at the keyboard (reasons in that section). Everything else here is yours to run.
 
 ---
 
@@ -45,15 +54,25 @@ show me this Jira issue
 
 If something is missing, the skill will point you at one of the two below.
 
-### Installing `acli` (macOS / Homebrew)
+### Installing `acli`
+
+**macOS** (Homebrew):
 
 ```bash
 brew tap atlassian/homebrew-acli
 brew install acli
 ```
 
-On other platforms follow the
-[official install guide](https://developer.atlassian.com/cloud/acli/guides/install-acli/).
+**Windows** (winget), per Atlassian's documentation:
+
+```powershell
+winget install Atlassian.CLI
+```
+
+**Linux** and anything else: follow the
+[official install guide](https://developer.atlassian.com/cloud/acli/guides/install-acli/), which
+branches per platform. Do not paste the macOS commands on a machine without Homebrew.
+
 If company policy blocks the install, do not work around it — ask IT.
 
 ### Logging in — the browser approval and site pick are yours
