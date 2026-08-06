@@ -85,7 +85,33 @@ Claude Code에서 **명령 두 줄**이면 됩니다.
 /plugin install jira-acli@jira-acli-skill
 ```
 
-설치 후 Claude Code에서 그냥 "지라 이슈 하나 봐줘" 라고 해보면 동작을 확인할 수 있습니다.
+터미널에서 하려면 같은 두 줄을 이렇게 씁니다.
+
+```bash
+claude plugin marketplace add larrabee-amicuslex/jira-acli-skill
+claude plugin install jira-acli@jira-acli-skill
+```
+
+### 설치가 됐는지 확인
+
+```bash
+claude plugin list          # jira-acli@jira-acli-skill 이 enabled 로 보이면 성공
+claude plugin details jira-acli@jira-acli-skill   # 무엇이 설치됐고 토큰을 얼마나 쓰는지
+```
+
+`details` 는 이렇게 나옵니다. **세션마다 붙는 고정 비용은 약 440 토큰**이고, 나머지는 스킬이 실제로
+호출될 때만 듭니다.
+
+```text
+Component inventory
+  Skills (1)  jira-acli
+Projected token cost
+  Always-on:   ~442 tok   added to every session
+```
+
+가장 확실한 확인은 그냥 Claude Code에서 "지라 이슈 하나 봐줘" 라고 해보는 것입니다.
+
+지우려면 `claude plugin uninstall jira-acli@jira-acli-skill` 입니다.
 
 <details>
 <summary>플러그인을 쓰지 않고 파일로 직접 설치하려면</summary>
