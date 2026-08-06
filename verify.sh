@@ -230,6 +230,11 @@ p_has "P19 confluence 블로그 작성 명령"       references/confluence.md 'a
 p_has "P20 blog 본문은 파일로 넘김"           references/confluence.md '\-\-from-file'
 p_has "P21 페이지 생성·수정 불가를 고백"      references/confluence.md '페이지를 만들 수도, 고칠 수도 없습니다'
 p_has "P22 Jira 와 별개 로그인임을 명시"      references/confluence.md 'acli confluence auth status'
+# P23~P25 — Confluence 쓰기도 Jira 와 똑같이 확인 게이트를 통과해야 한다.
+#           절차는 있는데 게이트가 빠지면, 확인 없이 조직 공간에 글이 올라간다.
+p_has "P23 confluence 쓰기 확인 게이트"       references/confluence.md '확인 게이트'
+p_has "P24 confluence 게이트에 명령 원문 표시" references/confluence.md '실행할 명령 원문'
+p_has "P25 confluence 되돌릴 수 없음을 고지"   references/confluence.md '지울 수 없다'
 
 p_has "P1 진입점검: acli --version"          references/entry-check.md 'acli --version'
 p_has "P2 진입점검: acli jira auth status"   references/entry-check.md 'acli jira auth status'
