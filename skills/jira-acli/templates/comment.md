@@ -1,78 +1,84 @@
-# 템플릿 — 일반 코멘트
+# Template - general comment
 
-`references/write.md` 4번에서 씁니다. 상태 변경과 무관하게 남기는 코멘트입니다.
+Used by `references/write.md` section 4. This is a comment unrelated to a status change.
 
-목적에 따라 아래 셋 중 하나를 고릅니다. 어느 것이든 `references/redaction.md` 규칙이 그대로
-적용되고, 검사기를 통과해야 합니다.
+Pick one of the three below based on purpose. All of them are subject to
+`references/redaction.md` and must pass the scanner.
 
----
-
-## A. 진행 상황 공유
-
-```text
-■ 진행 상황
-<지금 어디까지 됐는지 1~2문장>
-
-■ 확인된 것
-<사실 위주 1~3개. 없으면 이 칸을 지웁니다>
-
-■ 다음 단계
-<다음에 할 업무. 없으면 "없음">
-```
-
-## B. 질문 / 요청 (답이 필요할 때)
-
-```text
-■ 확인 부탁드립니다
-<무엇을 물어보는지 한 문장으로 명확하게>
-
-■ 배경
-<왜 필요한지 1~2문장>
-
-■ 필요한 답변
-<어떤 형태의 답이 필요한지. 선택지가 있으면 나열>
-
-■ 언제까지
-<기한. 없으면 "여유 있음">
-```
-
-## C. 결정 기록
-
-```text
-■ 결정 내용
-<무엇을 어떻게 하기로 했는지>
-
-■ 이유
-<판단 근거를 업무 언어로 1~2문장>
-
-■ 정한 사람 / 시점
-<이름 또는 역할, 날짜>
-
-■ 영향
-<이 결정으로 달라지는 것>
-```
+> **Write the actual comment in the user's language.** The headings below are shown in English
+> because these instructions are in English - translate them into whatever language the user and
+> their Jira use.
 
 ---
 
-## 공통 규칙
-
-- 대화·로그·오류 메시지를 **복사해 붙이지 않습니다.** 항상 다시 씁니다.
-- 경로·파일명·호스트·브랜치·커밋·스택·비밀값은 넣지 않습니다(`references/redaction.md` 2번).
-- 다른 사람을 지목할 때는 이름이나 역할까지만 씁니다. 개인 연락처는 넣지 않습니다.
-- 길면 읽지 않습니다. 한 코멘트는 10줄 이내를 목표로 합니다.
-
-## 채운 예시 (형태 예시 — 실제 값 아님)
+## A. Progress update
 
 ```text
-■ 확인 부탁드립니다
-이 요청을 이번 주에 처리해도 될지 확인 부탁드립니다.
+■ Progress
+<1-2 sentences on where things stand>
 
-■ 배경
-동일한 증상이 다른 화면에서도 보고돼, 함께 처리하면 중복 작업을 줄일 수 있습니다.
+■ Confirmed
+<1-3 factual points. Delete this block if there are none>
 
-■ 필요한 답변
-"이번 주 처리" 또는 "다음 일정으로 이월" 중 선택
+■ Next
+<the next business action. "None" if there isn't one>
+```
 
-■ 언제까지
-가능하면 내일까지
+## B. Question / request (when an answer is needed)
+
+```text
+■ Please confirm
+<one clear sentence stating what you are asking>
+
+■ Background
+<1-2 sentences on why it is needed>
+
+■ Answer needed
+<what form of answer is required; list the options if there are any>
+
+■ By when
+<deadline. "No rush" if there isn't one>
+```
+
+## C. Decision record
+
+```text
+■ Decision
+<what was decided and how>
+
+■ Reasoning
+<1-2 sentences of business rationale>
+
+■ Decided by / when
+<name or role, date>
+
+■ Impact
+<what changes as a result>
+```
+
+---
+
+## Shared rules
+
+- **Never copy and paste** conversation, logs, or error messages. Always rewrite.
+- No paths, filenames, hosts, branches, commits, stacks, or secrets
+  (`references/redaction.md` section 2).
+- When naming someone, use their name or role only. No personal contact details.
+- Long comments do not get read. Aim for 10 lines or fewer.
+
+## Filled example (shape only - not real values)
+
+```text
+■ Please confirm
+Could you confirm whether we can handle this request this week?
+
+■ Background
+The same symptom was reported on another screen, so handling them together would avoid duplicate
+work.
+
+■ Answer needed
+Either "handle this week" or "defer to the next cycle"
+
+■ By when
+Tomorrow if possible
 ```

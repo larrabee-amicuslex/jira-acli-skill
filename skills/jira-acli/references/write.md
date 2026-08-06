@@ -1,155 +1,163 @@
-# 쓰기 절차와 확인 게이트
+# Write procedures and the confirmation gate
 
-Jira를 **바꾸는 모든 동작**은 이 파일의 게이트를 통과해야 합니다. 예외 없습니다.
-상태 변경은 별도 절차가 있습니다 → `references/transition.md`
+**Every action that changes Jira** must pass the gate in this file. No exceptions.
+Status changes have their own procedure → `references/transition.md`
 
-전제: `SKILL.md` 0.5의 진입 점검 통과. (통과하지 못했을 때만 `references/entry-check.md` 를 엽니다.)
-
----
-
-## 0. 왜 스킬이 직접 확인을 받아야 하나
-
-`acli` 의 확인 프롬프트는 명령마다 있기도 하고 없기도 합니다. **도움말에서 관측된 사실**과
-**거기서 이 스킬이 취하는 가정**을 구분해서 적습니다.
-
-- `workitem create` 와 `workitem comment create` 의 도움말에는 확인 플래그(`--yes`)가 **아예
-  없습니다.** 이 스킬은 그 둘을 **묻지 않고 바로 실행되는 것으로 간주하고** 다룹니다.
-  **실제로 실행해 확인했습니다**(1.3.22-stable): 두 명령 모두 아무것도 되묻지 않고 그 자리에서
-  실행됐습니다. 즉 이 명령들은 **누르는 순간 Jira에 남습니다.** 되돌리는 명령은 이 스킬에 없습니다
-  (7번). 그래서 아래 게이트가 유일한 제동 장치입니다.
-- `transition`, `edit`, `assign` 등에는 `--yes` 가 있습니다. 다시 말해, 그게 없으면 CLI가 터미널에서
-  스스로 물어볼 수 있는데, 그 프롬프트는 대화 화면에서 사용자에게 제대로 전달되지 않습니다.
-
-그래서 **확인은 항상 이 스킬이 대화 안에서 직접 받습니다.** CLI의 프롬프트에 기대지 않습니다.
-확인을 받은 뒤 실행 단계에서는 `--yes` 를 붙여 CLI가 다시 묻지 않게 합니다(플래그가 있는 명령에 한해).
-
-## 1. 확인 게이트 — 모든 쓰기에 동일하게 적용
-
-실행 직전에 **두 가지를 모두** 보여주고, 명시적인 동의를 받습니다.
-
-1. **실행할 명령 원문** — 실제로 실행될 문자열 그대로. 나중에 다른 명령을 실행하지 않습니다.
-2. **실제로 들어갈 내용 전문** — 제목·본문·코멘트 등 Jira에 저장될 텍스트 전부.
-
-그리고 다음을 한 줄로 덧붙입니다.
-
-- 무엇이 바뀌는지 (어느 항목에, 무엇이)
-- 되돌릴 수 있는지 (코멘트/생성은 사람이 지워야 함, 상태는 되돌리는 이동이 허용될 때만 가능)
-
-"네" 에 해당하는 명확한 동의가 있어야만 실행합니다. 침묵·무응답·애매한 답은 동의가 아닙니다.
-
-## 2. 대상은 언제나 하나
-
-바꾸는 명령에는 **작업 항목 키를 하나만** 넣습니다.
-
-- 검색식으로 대상을 지정하지 않습니다.
-- 키를 쉼표로 나열하지 않습니다.
-- 오류 무시 옵션을 쓰지 않습니다.
-- 여러 건을 처리해야 하면, **한 건씩 게이트를 통과시켜** 반복합니다. 한 번의 확인으로 여러 건을
-  처리하지 않습니다.
-- 명령에 끼워 넣는 값(키·제목·상태 이름)은 넣기 전에 **값 안전 규칙**으로 검사합니다:
-  `references/value-safety.md`.
-
-## 3. 긴 글은 파일로 넘긴다
-
-한글 여러 줄 본문을 명령줄에 그대로 넣으면 따옴표·줄바꿈에서 깨지기 쉽습니다. 본문은 임시 파일에
-쓰고 파일 플래그로 넘깁니다.
-
-- 코멘트: `--body-file "<파일경로>"`
-- 새 항목 설명: `--description-file "<파일경로>"`
-
-파일 경로는 `mktemp` 등으로 만든 임시 경로를 씁니다. 확인 게이트에서는 **파일 경로가 아니라 파일
-내용**을 보여줍니다(사용자는 경로가 아니라 글을 확인해야 합니다).
+Prerequisite: the entry check in `SKILL.md` 0.5 has passed. (Open `references/entry-check.md` only
+when it did not.)
 
 ---
 
-## 4. 코멘트 남기기
+## 0. Why the skill must take the confirmation itself
 
-1. `templates/comment.md` 로 문구를 작성합니다.
-2. `references/redaction.md` 를 적용하고 검사기를 돌립니다.
+`acli`'s own prompting differs per command. Keep **what the help shows** separate from **the
+assumption this skill makes on top of it**.
+
+- The help for `workitem create` and `workitem comment create` has **no confirmation flag
+  (`--yes`) at all.** This skill treats both as **running immediately without asking**.
+  **This was verified by actually running them** (1.3.22-stable): neither asked anything, both
+  executed on the spot. Which means these commands **land in Jira the moment you press enter.**
+  There is no undo command in this skill (section 7). So the gate below is the only brake.
+- `transition`, `edit`, `assign` and others do have `--yes`. Meaning: without it the CLI may ask in
+  the terminal, and that prompt does not reach the user properly in a chat surface.
+
+So **the skill always takes confirmation itself, in the conversation.** Never lean on the CLI's
+prompt. After confirmation, attach `--yes` at execution so the CLI does not ask again (only on
+commands that have the flag).
+
+## 1. The confirmation gate - identical for every write
+
+Right before executing, show **both** of these and get explicit agreement.
+
+1. **The exact command** - the string as it will actually run. Never execute a different command
+   afterwards.
+2. **The full text that will land** - the entire title, body, or comment that will be stored.
+
+Then add one line covering:
+
+- What changes (on which item, what exactly)
+- Whether it can be undone (comments and creations must be deleted by a human; a status can only be
+  reversed if that transition is permitted)
+
+Execute only on clear agreement equivalent to "yes." Silence, no answer, or an ambiguous reply is
+not agreement.
+
+## 2. Always exactly one target
+
+A mutating command carries **exactly one work-item key.**
+
+- Never select targets with a search expression.
+- Never list keys separated by commas.
+- Never use error-ignoring options.
+- For several items, **pass the gate once per item** and repeat. Never handle multiple items on one
+  confirmation.
+- Values placed into the command (key, title, status name) are checked first against the
+  **value safety rules**: `references/value-safety.md`.
+
+## 3. Long text goes through a file
+
+Multi-line body text placed directly on the command line breaks easily on quotes and newlines.
+Write the body to a temporary file and pass it with a file flag.
+
+- Comment: `--body-file "<path>"`
+- New item description: `--description-file "<path>"`
+
+Use a temporary path from `mktemp` or similar. At the gate, show **the file's contents, not the
+path** (the user needs to check the writing, not the location).
+
+---
+
+## 4. Leaving a comment
+
+1. Draft with `templates/comment.md`.
+2. Apply `references/redaction.md` and run the scanner.
 
    ```bash
-   scripts/scan-sensitive.sh "<초안파일경로>"
+   scripts/scan-sensitive.sh "<draft path>"
    ```
 
-3. 확인 게이트(1번).
-4. 실행:
+3. Confirmation gate (section 1).
+4. Execute:
 
    ```bash
-   acli jira workitem comment create --key <KEY> --body-file "<초안파일경로>"
+   acli jira workitem comment create --key <KEY> --body-file "<draft path>"
    ```
 
-주의: 이 명령의 도움말 예시에는 `create` 가 빠져 있지만(도움말 오기), **올바른 형태는 위와 같이
-`comment create`** 입니다.
+Note: the help's example for this command omits `create` (an error in the help). **The correct form
+is `comment create`,** as above.
 
-## 5. 새 작업 항목 만들기
+## 5. Creating a work item
 
-1. 프로젝트를 확정합니다(`references/config.md`).
-2. 작업 유형을 확정합니다. 유형은 자유 문자열이므로, 프로젝트에서 관측된 유형을 보여주고 고르게
-   합니다(`references/config.md`의 유형 조회). 목록에 없는 유형을 적으면 그대로 받되, 실패할 수 있다고
-   미리 알립니다.
-3. `templates/workitem-create.md` 로 제목과 설명을 작성합니다.
-4. `references/redaction.md` 적용 + 검사기 통과.
-5. 확인 게이트(1번). 제목·유형·프로젝트·설명 전문을 모두 보여줍니다.
-6. 실행:
+1. Fix the project (`references/config.md`).
+2. Fix the work-item type. Type is a free string, so show the types observed in the project and let
+   the user pick (type lookup in `references/config.md`). If they name a type not in the list, take
+   it, but warn in advance that it may fail.
+3. Draft the title and description with `templates/workitem-create.md`.
+4. Apply `references/redaction.md` and pass the scanner.
+5. Confirmation gate (section 1). Show the title, type, project, and the full description.
+6. Execute:
 
    ```bash
-   acli jira workitem create --project "<your-project>" --type "<TYPE>" --summary "<제목>" --description-file "<파일경로>"
+   acli jira workitem create --project "<your-project>" --type "<TYPE>" --summary "<title>" --description-file "<path>"
    ```
 
-   담당자나 라벨을 덧붙이려면 `--assignee "<이메일 또는 @me>"`, `--label "<라벨1,라벨2>"` 를 같은
-   명령에 붙입니다(확인 게이트에도 함께 표시합니다). `--label` 은 쉼표로 구분된 목록을 받습니다
-   (`-l, --label strings`).
+   To add an assignee or labels, append `--assignee "<email or @me>"` and
+   `--label "<label1,label2>"` to the same command (and show them at the gate too). `--label` takes
+   a comma-separated list (`-l, --label strings`).
 
-7. **거부되면 정상입니다 — 5-1번(아래)로 갑니다.** 어떤 필드가 필수인지 미리 알아내는 명령이 없어서
-   사전에 막을 수 없습니다. 이건 스킬의 실수가 아니라 이 도구의 구조적 한계입니다.
-8. 성공하면 결과에 새 작업 항목 키와 주소가 함께 나옵니다. **실제로 실행해 확인한 형태**입니다:
+7. **A rejection here is normal - go to 5-1 below.** There is no command that tells you in advance
+   which fields are required, so it cannot be prevented. This is a structural limit of the tool, not
+   a mistake by the skill.
+8. On success the result carries the new key and its address. **This is the shape confirmed by
+   actually running it:**
 
    ```text
    ✓ Work item PROJ-123 created: https://YOURSITE.atlassian.net/browse/PROJ-123
    ```
 
-   이 키를 사용자에게 그대로 전합니다. 형태가 다르거나 키가 **보이지 않으면 지어내지 말고**
-   "만들어졌지만 키를 결과에서 읽지 못했습니다"라고 말한 뒤 `references/read.md` 3번(검색)으로
-   방금 만든 항목을 찾아 확인합니다.
+   Pass that key to the user as-is. If the shape differs or the key **is not visible, do not invent
+   one** - say "it was created but I couldn't read the key from the result," then find the item you
+   just created with `references/read.md` section 3 (search).
 
-## 5-1. 만들기가 필수 필드 때문에 거부됐을 때
+## 5-1. When creation is rejected for a required field
 
-**흔한 일입니다.** 프로젝트마다 만들 때 반드시 채워야 하는 필드를 따로 걸어둘 수 있고, 그 목록을
-미리 조회하는 명령이 acli에는 없습니다. 예를 들어 **라벨을 필수로 걸어둔 프로젝트**에서는
-`--label` 없이 만들면 거부됩니다(실제로 관측된 사례입니다). 어떤 필드가 걸려 있는지는 프로젝트마다
-다르므로, 이 스킬은 **어떤 필드도 미리 필수라고 가정하지 않습니다.**
+**This is common.** A project can require fields at creation time, and acli has no command to list
+them in advance. For example, in a **project that requires labels**, creating without `--label` is
+rejected (an actually observed case). Which field is enforced differs per project, so this skill
+**never assumes in advance that any particular field is required.**
 
-1. **서버 문장을 그대로 사용자에게 보여줍니다.** 오류 문구는 사이트 언어 설정에 따라 한국어로 나올
-   수 있고, 대개 **빠진 필드 이름이 그 문장 안에 들어 있습니다.** 그 이름을 근거로 다음을 정합니다.
-2. **값을 추측하지 않습니다.** 그 필드에 무엇을 넣을지 사용자에게 묻되, 맨입으로 묻지 말고
-   **그 프로젝트에서 실제로 쓰이고 있는 값을 조회해 후보로 보여줍니다.** 조회 방법:
-   `references/config.md` 5번.
-3. 사용자가 값을 고르면 **명령이 바뀐 것이므로 확인 게이트(1번)를 다시 통과합니다.** 앞서 받은
-   동의는 이전 명령에 대한 것이지 새 명령에 대한 것이 아닙니다.
-4. 재시도는 `references/errors.md` 의 3회 규칙을 따릅니다. 매번 다른 가설로 고쳐서 시도하고, 같은
-   명령을 그대로 반복하지 않습니다.
-5. 3회로도 안 되면 멈추고, 시도한 것과 실패 이유를 정리해 보여준 뒤 Jira 화면에서 직접 만들도록
-   안내합니다. 화면에는 필수 필드가 표시되므로 사람이 훨씬 쉽게 채울 수 있습니다.
+1. **Show the server's sentence to the user verbatim.** The wording may appear in the site's own
+   language, and it usually **contains the name of the missing field.** Base the next step on that
+   name.
+2. **Do not guess the value.** Ask the user what to put there - but do not ask empty-handed:
+   **look up the values that project actually uses and offer them as candidates.** Lookup method:
+   `references/config.md` section 5.
+3. Once the user picks a value, **the command has changed, so pass the confirmation gate (section 1)
+   again.** The earlier agreement covered the earlier command, not this one.
+4. Retries follow the three-attempt rule in `references/errors.md`. Change a different hypothesis
+   each time; never repeat the identical command.
+5. If three attempts fail, stop, summarise what was tried and why it failed, and point the user to
+   the Jira UI. The UI displays required fields, which makes it far easier for a human to fill in.
 
-**중복 생성 주의**: 거부된 명령은 항목을 만들지 않지만, 결과가 불확실하면 무작정 다시 실행하지 말고
-`references/read.md` 3번으로 이미 만들어졌는지 먼저 확인합니다.
+**Watch for duplicates:** a rejected command creates nothing, but if the outcome is uncertain, do
+not blindly re-run - first check with `references/read.md` section 3 whether it already exists.
 
-## 6. 제목·설명·담당자 수정
+## 6. Editing title, description, assignee
 
-- 제목: `acli jira workitem edit --key "<KEY>" --summary "<새 제목>" --yes`
-- 설명: `acli jira workitem edit --key "<KEY>" --description-file "<파일경로>" --yes`
-- 담당자: `acli jira workitem assign --key "<KEY>" --assignee "<이메일 또는 @me>" --yes`
+- Title: `acli jira workitem edit --key "<KEY>" --summary "<new title>" --yes`
+- Description: `acli jira workitem edit --key "<KEY>" --description-file "<path>" --yes`
+- Assignee: `acli jira workitem assign --key "<KEY>" --assignee "<email or @me>" --yes`
 
-- 수정은 **덮어쓰기**입니다. 기존 값이 사라집니다. 확인 게이트에서 **바뀌기 전 값과 바뀐 뒤 값을 함께**
-  보여줍니다(바뀌기 전 값은 `references/read.md` 1번으로 먼저 읽습니다).
-- 담당자 이메일을 추측하지 않습니다. 모르면 사용자에게 묻습니다. 본인 지정은 `@me` 를 씁니다.
+- An edit **overwrites**. The previous value disappears. At the gate show **both the before and the
+  after value** (read the before value first with `references/read.md` section 1).
+- Never guess an assignee's email. If you do not know it, ask. Use `@me` for the user themselves.
 
-## 7. 이 스킬이 하지 않는 쓰기 동작
+## 7. Writes this skill does not perform
 
-요청받아도 하지 않습니다. 대신 이유를 말하고 Jira 화면에서 직접 하도록 안내합니다.
+Do not do these even when asked. Explain why and point the user to the Jira UI.
 
-- 삭제(작업 항목, 코멘트, 첨부)
-- 보관(archive) / 보관 해제
-- 복제(clone)
-- 대량 생성 / 대량 수정
-- 첨부 파일 올리기 — **명령 자체가 존재하지 않습니다.** "올려드릴게요"라고 절대 말하지 않습니다.
+- Deleting (work items, comments, attachments)
+- Archiving / unarchiving
+- Cloning
+- Bulk creation / bulk edits
+- Uploading attachments - **the command does not exist.** Never say "I'll upload it for you."

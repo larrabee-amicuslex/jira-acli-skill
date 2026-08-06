@@ -1,139 +1,145 @@
-# Confluence 절차 — 읽기와 블로그 글 남기기
+# Confluence - reading, and publishing a blog post
 
-`acli` 는 Jira뿐 아니라 Confluence도 다룹니다. 다만 **할 수 있는 일이 Jira보다 훨씬 좁습니다.**
-그 좁은 범위를 정확히 알고 시작해야 사용자에게 거짓말을 하지 않습니다.
+`acli` handles Confluence as well as Jira. But **what it can do there is far narrower than in Jira.**
+Know that narrow range precisely, or you will end up lying to the user.
 
-전제: `SKILL.md` 0.5의 진입 점검 통과. (통과하지 못했을 때만 `references/entry-check.md` 를 엽니다.)
+Prerequisite: the entry check in `SKILL.md` 0.5 has passed. (Open `references/entry-check.md` only
+when it did not.)
 
-> Jira 로그인과 Confluence 로그인은 **별개**입니다. Confluence 명령이 인증 오류를 내면
-> `acli confluence auth status` 로 확인하고, 필요하면 `acli confluence auth login --web` 을
-> **사용자가 직접** 실행하도록 안내합니다. 토큰은 어떤 형태로도 다루지 않습니다(P5).
-
----
-
-## 0. 먼저 알아야 할 한계 — 숨기지 말 것
-
-이건 이 스킬이 게을러서가 아니라 **`acli` 에 그 명령이 없기 때문**입니다. 되는 척하지 않습니다.
-
-1. **페이지를 만들 수도, 고칠 수도 없습니다.** `acli confluence page` 에는 `view` 하나뿐입니다.
-   문서를 새로 쓰거나 고쳐 달라는 요청은 **받아들이지 말고**, 브라우저에서 직접 하도록 안내합니다.
-   "제가 만들어 드릴게요"라고 절대 말하지 않습니다.
-2. **페이지를 검색할 수 없습니다.** 제목이나 본문으로 찾는 명령이 없습니다. **페이지 ID를 알아야만**
-   읽을 수 있습니다. ID를 모르면 사용자에게 페이지 주소나 ID를 달라고 요청합니다.
-3. **댓글을 읽거나 달 수 없습니다.** 관련 명령이 없습니다.
-4. **첨부 파일을 다룰 수 없습니다.** 목록조차 없습니다.
-5. **쓸 수 있는 것은 블로그 글 만들기 하나뿐입니다**(`blog create`). 그마저도 **수정·삭제 명령이
-   없습니다.** 한 번 만들면 이 스킬로는 되돌릴 수 없고, 사람이 브라우저에서 지워야 합니다.
-6. 공간(space)을 만들거나·보관하거나·되살리거나·설정을 바꾸는 명령(`space create/archive/restore/update`)이
-   존재하지만, **이 스킬은 그것들을 쓰지 않습니다.** 조직 전체에 영향을 주는 관리자 작업이기 때문입니다.
-   요청받으면 이유를 설명하고 관리자에게 문의하도록 안내합니다.
+> Jira login and Confluence login are **separate**. If a Confluence command returns an
+> authentication error, check with `acli confluence auth status`, and if needed have the **user
+> themselves** run `acli confluence auth login --web`. Never handle a token in any form (P5).
 
 ---
 
-## 1. 읽기 — 확인 게이트 불필요
+## 0. Limits to know first - do not hide these
 
-### (1) 페이지 읽기 — ID가 있어야 합니다
+This is not laziness on the skill's part - **`acli` simply has no such command.** Do not pretend
+otherwise.
+
+1. **You cannot create or edit a page.** `acli confluence page` has only `view`. A request to write
+   or revise a document must **not be accepted** - point the user to the browser. Never say "I'll
+   create it for you."
+2. **You cannot search pages.** There is no command that finds one by title or body. **You must know
+   the page ID** to read it. If you do not have it, ask the user for the page URL or ID.
+3. **You cannot read or post comments.** No commands exist for that.
+4. **You cannot handle attachments.** There is not even a list command.
+5. **The only thing you can write is a blog post** (`blog create`). And even that has **no edit or
+   delete command.** Once created, this skill cannot undo it - a human must delete it in the browser.
+6. Commands to create, archive, restore, or reconfigure a space
+   (`space create/archive/restore/update`) do exist, but **this skill does not use them.** They are
+   administrator actions that affect the whole organisation. If asked, explain why and point the user
+   to an admin.
+
+---
+
+## 1. Reading - no confirmation gate needed
+
+### (1) Reading a page - you need the ID
 
 ```bash
 acli confluence page view --id <PAGE_ID> --json
 ```
 
-- `--id` 는 **숫자로 된 페이지 ID** 입니다. 공간 키(`ABC`)나 제목이 아닙니다.
-- 사용자가 브라우저 주소를 줬다면, 주소 안의 `/pages/` 바로 뒤에 오는 숫자가 페이지 ID인 경우가
-  일반적입니다. **다만 주소 형태는 사이트마다 다를 수 있으므로 단정하지 않습니다.** 뽑아낸 값이
-  숫자가 아니거나 확신이 서지 않으면 **사용자에게 페이지 ID를 직접 물어봅니다.**
-- 값 검사는 `references/value-safety.md` 를 따릅니다. ID는 **숫자만** 통과시킵니다
-  (`^[0-9]+$`). 그 외의 문자가 섞여 있으면 명령에 넣지 않고 다시 묻습니다.
-- 본문 형태를 고를 수 있습니다. 사람에게 보여줄 목적이면 읽기 쉬운 쪽을 받습니다.
+- `--id` is the **numeric page ID**. Not a space key (`ABC`), not a title.
+- If the user gave you a browser URL, the number right after `/pages/` is commonly the page ID.
+  **URL shapes differ per site, so do not treat that as certain.** If what you extracted is not
+  numeric, or you are not confident, **ask the user for the page ID directly.**
+- Value checking follows `references/value-safety.md`. For an ID, allow **digits only**
+  (`^[0-9]+$`). If anything else is mixed in, do not put it in the command - ask again.
+- You can choose the body format. For something a person will read, request the readable one.
 
   ```bash
   acli confluence page view --id <PAGE_ID> --body-format view --json
   ```
 
-  `--body-format` 은 도움말에 `storage`, `atlas_doc_format`, `view` 가 예시로 적혀 있습니다.
-  어떤 값이 그 사이트에서 실제로 통하는지는 **실행해 봐야 압니다.** 거부되면 다른 값으로 다시 시도합니다.
-- 라벨이나 하위 페이지가 필요하면 그때만 덧붙입니다: `--include-labels`, `--include-direct-children`.
-  **필요하지도 않은 `--include-*` 를 습관적으로 붙이지 않습니다.** 응답만 커집니다.
-- 받은 내용은 **그대로 붙여넣지 않습니다.** 서식이 들어간 구조(HTML/ADF)로 오므로, 읽어서 한국어
-  요약이나 짧은 목록으로 다시 써서 보여줍니다(`references/read.md` 5번의 렌더링 규칙과 같습니다).
+  The help lists `storage`, `atlas_doc_format`, and `view` as examples for `--body-format`. Which
+  values actually work on that site **is only known by running it.** If rejected, try another value.
+- Add `--include-labels` or `--include-direct-children` only when labels or child pages are actually
+  needed. **Do not attach `--include-*` flags out of habit** - they only bloat the response.
+- **Never paste the content back as-is.** It arrives as rich structure (HTML/ADF), so read it and
+  rewrite it as a summary or short list in the user's language (same rendering rules as
+  `references/read.md` section 5).
 
-### (2) 공간 찾기 — 키를 ID로 바꿔야 할 때
+### (2) Finding a space - turning a key into an ID
 
-블로그를 만들려면 **공간 ID**(숫자)가 필요한데, 사람이 아는 건 보통 **공간 키**(`ABC`)입니다.
-목록에서 찾아 바꿉니다.
+Publishing a blog post needs the **space ID** (numeric), but what people know is usually the **space
+key** (`ABC`). Convert it via the list.
 
 ```bash
 acli confluence space list --json
-acli confluence space list --keys "<KEY>" --json      # 키를 알 때
-acli confluence space list --type personal --json      # 개인 공간만
+acli confluence space list --keys "<KEY>" --json      # when you know the key
+acli confluence space list --type personal --json      # personal spaces only
 ```
 
-- 기본 개수 제한이 있습니다(도움말 기준 50). 목록이 잘렸을 수 있으면 그렇게 말하고 `--limit` 을
-  올리거나 `--keys` 로 좁힙니다. **"이게 전부입니다"라고 단정하지 않습니다.**
-- 공간 자체를 자세히 볼 때: `acli confluence space view --id <SPACE_ID> --json`
+- There is a default count limit (50 per the help). If the list may be truncated, say so and either
+  raise `--limit` or narrow with `--keys`. **Never assert "this is all of them."**
+- For detail on the space itself: `acli confluence space view --id <SPACE_ID> --json`
 
-### (3) 블로그 글 읽기
+### (3) Reading blog posts
 
 ```bash
-acli confluence blog list --space-id <SPACE_ID> --json          # 그 공간의 최근 글
-acli confluence blog list --title "<검색어>" --json              # 제목으로 거르기
+acli confluence blog list --space-id <SPACE_ID> --json          # recent posts in that space
+acli confluence blog list --title "<search text>" --json        # filter by title
 acli confluence blog view --id <BLOG_ID> --json
 ```
 
-- `blog list` 는 **제목 필터가 있습니다**(`--title`). 페이지와 달리 이쪽은 제목으로 찾을 수 있습니다.
-- 결과가 잘릴 수 있습니다(기본 25). 페이지가 더 있으면 `--cursor` 로 이어 받습니다. 잘렸는데
-  잘리지 않은 척하지 않습니다.
+- `blog list` **has a title filter** (`--title`). Unlike pages, these can be found by title.
+- Results may be truncated (default 25). If more pages exist, continue with `--cursor`. Never
+  pretend an unfinished list is complete.
 
 ---
 
-## 2. 블로그 글 만들기 — 확인 게이트 필수
+## 2. Publishing a blog post - confirmation gate required
 
-**이 스킬이 Confluence에 쓰기를 하는 유일한 동작입니다.** 수정·삭제 명령이 없으므로, 한 번 만들면
-사람이 브라우저에서 지워야 합니다. 그 사실을 게이트에서 반드시 알립니다.
+**This is the only write this skill performs in Confluence.** There is no edit or delete command, so
+once it is up, a human must remove it in the browser. Say that at the gate, every time.
 
-1. **공간을 확정합니다.** 사용자가 공간 키를 말했으면 위 1-(2)로 **ID를 찾아냅니다.** 키를 그대로
-   `--space-id` 에 넣지 않습니다.
-2. **제목과 본문을 작성합니다.** `templates/blog-post.md` 를 씁니다.
-3. **`references/redaction.md` 를 적용하고 검사기를 통과시킵니다.** Confluence 문서는 Jira보다
-   더 넓은 사람이 봅니다. 내부 개발 정보가 들어가면 안 되는 이유가 더 큽니다.
-
-   ```bash
-   scripts/scan-sensitive.sh "<초안파일경로>"
-   ```
-
-4. **본문은 파일로 넘깁니다.** `--body` 는 명령줄에 XHTML을 그대로 넣는 방식이라 따옴표와 줄바꿈에서
-   깨지기 쉽습니다. 이 스킬은 **항상 `--from-file`** 을 씁니다.
-5. **확인 게이트**(`references/write.md` 1번과 동일): 실행할 명령 원문 + 실제로 들어갈 제목·본문
-   전문을 보여주고 명시적인 "네"를 받습니다. 여기에 두 가지를 덧붙입니다.
-   - 어느 공간에 올라가는지 (**키와 ID를 함께**)
-   - **이 스킬로는 지울 수 없다**는 사실
-6. 실행:
+1. **Fix the space.** If the user named a space key, **convert it to an ID** via 1-(2) above. Never
+   put a key into `--space-id`.
+2. **Draft the title and body** using `templates/blog-post.md`.
+3. **Apply `references/redaction.md` and pass the scanner.** Confluence documents are read by an even
+   wider audience than Jira, so the reason to keep internal detail out is stronger.
 
    ```bash
-   acli confluence blog create --space-id "<SPACE_ID>" --title "<제목>" --from-file "<파일경로>"
+   scripts/scan-sensitive.sh "<draft path>"
    ```
 
-   - 사용자가 "일단 초안으로"라고 하면 `--status draft` 를 붙입니다. 기본값은 곧바로 게시되는
-     `current` 입니다. **어느 쪽인지 게이트에서 분명히 말합니다.**
-   - 본인만 볼 글이면 `--private` 를 붙일 수 있습니다.
-   - `--yes` 같은 확인 플래그가 **없습니다.** 즉 실행하는 순간 올라갑니다. 게이트가 유일한 제동
-     장치입니다.
-7. 결과에 나온 값을 사용자에게 그대로 전합니다. 결과 형태가 예상과 다르면 **지어내지 말고**
-   "만들어졌지만 결과에서 값을 읽지 못했습니다"라고 말한 뒤 `blog list --title "<제목>"` 으로 확인합니다.
+4. **Pass the body through a file.** `--body` puts XHTML directly on the command line, which breaks
+   easily on quotes and newlines. This skill **always uses `--from-file`.**
+5. **Confirmation gate** (identical to `references/write.md` section 1): show the exact command plus
+   the full title and body that will land, and get an explicit yes. Add two things:
+   - Which space it goes to (**both the key and the ID**)
+   - That **this skill cannot delete it**
+6. Execute:
+
+   ```bash
+   acli confluence blog create --space-id "<SPACE_ID>" --title "<title>" --from-file "<path>"
+   ```
+
+   - If the user says "as a draft for now," add `--status draft`. The default is `current`, which
+     publishes immediately. **State clearly at the gate which one it will be.**
+   - For something only they should see, `--private` can be added.
+   - There is **no `--yes`-style confirmation flag**, meaning it goes live the moment it runs. The
+     gate is the only brake.
+7. Report the values from the result as-is. If the shape is unexpected, **do not invent one** - say
+   "it was created but I couldn't read the value from the result," then confirm with
+   `blog list --title "<title>"`.
 
 ---
 
-## 3. 오류가 났을 때
+## 3. When something errors
 
-기본 태도는 `references/errors.md` 와 같습니다 — 원문을 감추지 않고, 쉬운 말을 얹고, 지어내지 않습니다.
+The stance is the same as `references/errors.md` - never hide the original, add plain language, never
+invent.
 
-| 상황 | 뜻과 대응 |
+| Situation | Meaning and response |
 |---|---|
-| 인증 오류 | Jira와 **별개 로그인**입니다. `acli confluence auth status` 로 확인하고, 필요하면 사용자가 직접 `acli confluence auth login --web` |
-| 페이지를 찾을 수 없음 | ID가 틀렸거나 권한이 없습니다. 주소에서 뽑은 숫자가 맞는지 사용자에게 확인받습니다 |
-| `--body-format` 거부 | 그 사이트에서 통하지 않는 값입니다. 다른 값으로 다시 시도합니다 |
-| 공간 ID 관련 오류 | 키를 ID로 바꾸지 않았을 가능성이 큽니다. 1-(2)로 돌아갑니다 |
-| 본문 형식 오류 | 저장 형식(XHTML)이 요구됩니다. 본문을 파일로 넘겼는지, 태그가 닫혔는지 확인합니다 |
+| Authentication error | This is a **separate login** from Jira. Check `acli confluence auth status`, and if needed have the user run `acli confluence auth login --web` themselves |
+| Page not found | Wrong ID or no permission. Confirm with the user that the number taken from the URL is right |
+| `--body-format` rejected | That value does not work on this site. Try another |
+| Space ID errors | Most likely the key was never converted to an ID. Go back to 1-(2) |
+| Body format error | Storage format (XHTML) is expected. Check the body went through a file and the tags are closed |
 
-같은 명령을 **3번까지만** 시도하고, 매번 다른 가설로 고칩니다. 그래도 안 되면 멈추고 브라우저에서
-직접 하도록 안내합니다.
+Try the same command **at most three times**, changing a different hypothesis each time. If it still
+fails, stop and point the user to the browser.

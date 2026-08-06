@@ -1,42 +1,42 @@
-# 진입 점검 (Entry Check) — 통과하지 못했을 때 여는 파일
+# Entry check - the file you open when the check does not pass
 
-**진입 점검 자체는 `SKILL.md` 0.5의 두 줄로 끝납니다.** 그게 통과하면 이 파일을 열 필요가 없습니다.
-이 파일은 **둘 중 하나라도 통과하지 못했을 때** 여는 곳입니다 — 설치 안내, 로그인 안내, 브라우저를
-쓸 수 없는 경우, 계정·사이트 전환.
+**The entry check itself is finished by the two lines in `SKILL.md` 0.5.** If those pass, you do
+not need this file. This file is for **when either one fails** - install guidance, login guidance,
+the no-browser case, and account/site switching.
 
-진입 점검은 Jira에 무언가를 묻거나 바꾸기 전에 도구가 준비돼 있는지부터 확인하는 동작입니다.
-이 점검을 건너뛰면 사용자는 `command not found` 같은 알 수 없는 오류를 보게 됩니다.
-그런 화면은 절대 사용자에게 보여주지 않습니다.
+The entry check confirms the tool is ready before you ask Jira anything or change anything.
+Skipping it means the user sees a cryptic error like `command not found`. Never show them that.
 
-## 규칙
+## Rules
 
-- 세션에서 이 스킬을 처음 쓸 때 A와 B를 실행합니다.
-- A나 B가 통과하지 못하면 **Jira 명령을 하나도 실행하지 않고**, 아래 안내로 넘어갑니다.
-- 이미 로그인돼 있는 사용자에게 **다시 로그인하라고 요구하지 않습니다.** 인증 방식이 무엇이든
-  (브라우저 방식이든 토큰 방식이든) `Authenticated` 로 나오면 그대로 진행합니다.
-- **토큰은 어떤 형태로도 다루지 않습니다.** 묻지 않고, 받지 않고, 붙여넣지 않고, 화면에 찍지 않고,
-  파일이나 환경변수에 저장하지 않습니다.
+- Run A and B the first time this skill is used in a session.
+- If A or B does not pass, **run no Jira command at all** and move to the guidance below.
+- **Never ask an already-authenticated user to log in again.** Whatever the authentication type
+  (browser or token), if it reports `Authenticated`, proceed.
+- **Never handle a token in any form.** Do not ask for it, accept it, paste it, print it, or store
+  it in a file or environment variable.
 
 ---
 
-## A. 설치와 버전 확인
+## A. Installation and version
 
 ```bash
 acli --version
 ```
 
-- 정상: `acli version <버전>` 형태의 한 줄이 출력됩니다.
-- 실패(명령을 찾을 수 없음 / 실행 실패): **설치 안내**로 이동합니다. 오류 원문을 그대로 던지지 말고,
-  "Jira를 다루는 Atlassian 공식 도구(acli)가 아직 설치돼 있지 않습니다" 라고 먼저 설명합니다.
+- Healthy: one line in the form `acli version <version>`.
+- Failure (command not found / fails to run): go to **install guidance**. Do not throw the raw
+  error at the user - explain first: "The official Atlassian tool for Jira (acli) isn't installed
+  yet."
 
-## B. 로그인 상태 확인
+## B. Authentication status
 
 ```bash
 acli jira auth status
 ```
 
-- 이 명령에는 `--json` 옵션이 없습니다. 출력 문장을 그대로 읽어서 판단합니다.
-- 정상일 때의 **출력 형태 예시** (값은 사용자 환경마다 다릅니다. 아래 값은 자리표시자입니다):
+- This command has no `--json` option. Read the printed text and judge from it.
+- **Shape of a healthy output** (values differ per user; the ones below are placeholders):
 
   ```text
   ✓ Authenticated
@@ -45,30 +45,30 @@ acli jira auth status
     Authentication Type: oauth
   ```
 
-- 위와 같이 인증됨이 확인되면, 그 **사이트와 계정을 그대로** 사용합니다. 사이트 주소를 따로 묻지
-  않습니다. 이미 도구가 알려주고 있기 때문입니다.
-- 인증되지 않았거나 출력이 위 형태가 아니면 **로그인 안내**로 이동합니다.
-- 인증되지 않았을 때의 정확한 출력 문구와 종료 코드는 이 문서에서 단정하지 않습니다. 실행해서
-  나온 문장을 그대로 근거로 삼고, 애매하면 "로그인 상태를 확실히 확인하지 못했다"고 말한 뒤
-  로그인 안내를 제시합니다.
-- 참고로 **한 번 관측된 미인증 사례**(1.3.22-stable, 로그인 정보를 지운 상태)는 다음과 같았습니다.
-  이건 판정 기준이 아니라 참고 사례입니다. 이 문구가 나오는지로 판단하지 말고, 위 `✓ Authenticated`
-  형태가 **나오는지 여부**로 판단하세요.
+- When authentication is confirmed, use **that site and account as-is**. Do not ask for the site
+  address separately - the tool has already told you.
+- If it is not authenticated, or the output does not look like the above, go to **login guidance**.
+- This document does not assert the exact wording or exit code of the unauthenticated case. Judge
+  from what you actually get, and if it is ambiguous, say "I couldn't confirm the login state" and
+  offer the login guidance.
+- For reference, one **observed** unauthenticated case (1.3.22-stable, credentials removed) looked
+  like this. This is a reference sample, not a matching rule. Do not decide by whether this exact
+  string appears - decide by whether the `✓ Authenticated` shape above appears.
 
   ```text
   ✗ Error: unauthorized: use 'acli jira auth login' to authenticate
   ```
 
-  이때 종료 코드는 1이었습니다. 다만 출력을 파이프로 넘기면 파이프 마지막 명령의 코드가 잡히므로,
-  종료 코드를 보려면 파이프 없이 실행해야 합니다.
+  The exit code was 1 there. Note that piping the output captures the exit code of the last command
+  in the pipe, so run it without a pipe if you need the code.
 
 ---
 
-## 설치 안내 (A 실패 시)
+## Install guidance (when A fails)
 
-사용자에게 그대로 전달할 문장 + 명령입니다. 사용자가 직접 터미널에 붙여넣도록 안내합니다.
+Text and commands to hand to the user. Tell them to paste it into their own terminal.
 
-macOS (Homebrew, Atlassian 공식 문서에 적힌 방법):
+macOS (Homebrew, as documented by Atlassian):
 
 ```bash
 brew tap atlassian/homebrew-acli
@@ -76,67 +76,75 @@ brew install acli
 acli --version
 ```
 
-- 설치가 끝나면 `acli --version` 이 버전을 출력합니다. 그 결과를 알려달라고 요청한 뒤 A부터 다시
-  시작합니다.
-- macOS가 아니거나 Homebrew를 쓰지 않는 경우: Atlassian 공식 설치 가이드
-  <https://developer.atlassian.com/cloud/acli/guides/install-acli/> 를 안내합니다. 이 페이지에서
-  운영체제별(macOS / Windows / Linux) 안내로 이어집니다. macOS 전용 페이지는
-  <https://developer.atlassian.com/cloud/acli/guides/install-macos/> 입니다.
-- 사내 정책상 설치가 막혀 있을 수 있습니다. 그럴 때는 억지로 우회하지 말고, IT 담당자에게 문의가
-  필요하다고 솔직히 안내합니다.
+- When the install finishes, `acli --version` prints a version. Ask them to report that, then
+  restart from A.
+- Not on macOS, or not using Homebrew: point to the official install guide,
+  <https://developer.atlassian.com/cloud/acli/guides/install-acli/>, which branches per OS
+  (macOS / Windows / Linux). The macOS-specific page is
+  <https://developer.atlassian.com/cloud/acli/guides/install-macos/>.
+- Company policy may block the install. Do not try to work around it - say plainly that they need
+  to ask IT.
 
 ---
 
-## 로그인 안내 (B 실패 시)
+## Login guidance (when B fails)
 
-이 스킬이 안내하는 로그인 방법은 **하나뿐**입니다.
+There is **exactly one** login method this skill guides.
 
 ```bash
 acli jira auth login --web
 ```
 
-- 이 명령은 브라우저를 열어 사용자가 직접 로그인하게 합니다. **사이트 주소나 이메일을 인자로 받지
-  않습니다.** 그래서 이 스킬은 어떤 회사의 어떤 Jira에서도 그대로 동작합니다.
-- 브라우저에서 사이트를 고른 뒤, 터미널에서도 같은 사이트를 한 번 더 선택하는 단계가 있습니다.
-  사용자가 당황하지 않도록 미리 알려줍니다. **실제 실행에서 확인된 흐름**입니다:
+- It opens a browser so the user signs in themselves. **It takes no site or email argument**, which
+  is why this skill works on any company's Jira.
+- After they approve in the browser, there is a second step **in the terminal** where the same site
+  must be selected. Warn them in advance so it does not surprise them. This is the **flow confirmed
+  by actually running it**:
 
   ```text
-  ⢿ Authenticating...                      ← 브라우저가 열리고 사용자가 로그인·승인할 때까지 이 상태로 멈춰 있음
-  ┃ Select the site to login               ← 브라우저 승인이 끝나면 터미널에 사이트 목록이 뜸
+  ⢿ Authenticating...                      ← waits here while the browser opens and the user approves
+  ┃ Select the site to login               ← after browser approval, the terminal shows the site list
   ┃ > https://YOURSITE.atlassian.net
-  ↑ up • ↓ down • / filter • enter submit  ← 방향키로 고르고 enter
+  ↑ up • ↓ down • / filter • enter submit  ← choose with arrow keys, then enter
   ✓ Authentication successful
-    Welcome, <사용자 이름>
+    Welcome, <user name>
   ```
 
-- 이 명령은 **사용자가 직접 터미널에서 실행해야 합니다.** 브라우저 로그인과 사이트 선택 둘 다 사람이
-  해야 하므로, 대신 실행해 주겠다고 말하지 않습니다. 명령 한 줄을 주고 "끝나면 알려주세요"까지가
-  이 스킬의 몫입니다.
-- 로그인이 끝나면 B(`acli jira auth status`)를 다시 실행해 확인합니다.
+- **Have the user run this in their own terminal.** Launching the command is not the problem - the
+  browser opens fine either way. But **both** the browser approval and the arrow-key site selection
+  need a human, and **the approval only completes while that command is still alive**. If you run
+  it somewhere the user cannot reach, it stalls at the site list; if the process is killed, the
+  browser may say "success" while the login never lands. Give them the one line and stop at "tell
+  me when you're done."
+- When they are finished, run B (`acli jira auth status`) again to confirm.
 
-### 브라우저를 쓸 수 없는 환경이라면
+### When a browser is not available
 
-솔직하게 말합니다: **`--web` 방식은 브라우저가 필요합니다.** 브라우저를 띄울 수 없는 서버나 원격
-터미널에서는 쓸 수 없습니다.
+Say it plainly: **`--web` needs a browser.** It cannot be used on a server or remote terminal that
+cannot open one.
 
-이때는 API 토큰을 쓰는 다른 로그인 방식이 존재한다는 사실만 **이름으로 알려주고 끝냅니다.**
-`acli jira auth login` 에는 토큰을 쓰는 로그인 경로가 따로 있습니다. **구체적인 플래그 조합은 이
-문서에 적지 않습니다** — 사용자가 직접 `acli jira auth login --help` 를 보고 진행하거나, IT 담당자에게
-요청하도록 안내합니다. 이 스킬은 그 경로를 **대신 실행하지 않고, 토큰을 묻지도 받지도 않습니다.**
-
----
-
-## 계정이나 사이트를 바꿔야 할 때
-
-`acli` 에는 계정 전환 명령(`acli jira auth switch`)과 로그아웃 명령(`acli jira auth logout`)이
-있습니다. 이 스킬은 **사용자 몰래 계정을 바꾸지 않습니다.** 다른 사이트/계정으로 작업해야 한다면
-그 사실을 설명하고, 사용자가 직접 전환하도록 안내한 뒤 B부터 다시 확인합니다.
+In that case, mention **only by name** that another login path using an API token exists.
+`acli jira auth login` has a separate token-based route. **The exact flag combination is not
+written in this document** - tell the user to check `acli jira auth login --help` themselves or to
+ask IT. This skill **does not run that path for them, and does not ask for or accept a token.**
 
 ---
 
-## 점검 결과 보고 형식 (사용자에게 보여줄 문장)
+## Switching account or site
 
-- 통과: "Jira 도구 준비됐습니다. `<사이트>` 사이트에 `<계정>` 으로 로그인돼 있어요. 이어서 진행할게요."
-  (사이트/계정 값은 B의 출력에서 읽은 실제 값을 씁니다.)
-- 미설치: 설치 안내 3줄 + "설치 끝나면 알려주세요."
-- 미로그인: `acli jira auth login --web` 한 줄 + 브라우저가 열린다는 설명 + "로그인 끝나면 알려주세요."
+`acli` has an account switch command (`acli jira auth switch`) and a logout command
+(`acli jira auth logout`). This skill **never switches accounts behind the user's back.** If work
+needs a different site or account, explain that, let the user switch it themselves, then re-check
+from B.
+
+---
+
+## How to report the check result (what the user sees)
+
+Write these in the user's own language.
+
+- Pass: "Jira is ready. You're signed in to `<site>` as `<account>`. Continuing."
+  (use the real values read from B's output)
+- Not installed: the three install lines + "let me know when it's installed."
+- Not logged in: the single `acli jira auth login --web` line + a note that a browser will open +
+  "let me know when you're done."

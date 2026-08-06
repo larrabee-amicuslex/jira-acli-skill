@@ -1,84 +1,94 @@
-# 템플릿 — 상태 변경 알림 문구
+# Template - status change note
 
-`references/transition.md` 5단계에서 씁니다. 상태를 바꾼 뒤 코멘트로 남길 문구입니다.
+Used by `references/transition.md` step 5. This is the note posted as a comment after changing a
+status.
 
-**쓰는 법**: 아래 뼈대를 그대로 복사해 각 칸을 채웁니다. 칸 아래의 "이 칸의 규칙"을 지키면
-내부 개발 정보는 애초에 들어갈 자리가 없습니다. 규칙은 `references/redaction.md` 와 같습니다.
+**How to use**: copy the skeleton below and fill each slot. Follow the per-slot rules and internal
+engineering detail has nowhere to enter in the first place. The rules match
+`references/redaction.md`.
+
+> **Write the actual note in the user's language.** The headings below are in English because these
+> instructions are - translate them into whatever language the user and their Jira use.
 
 ---
 
-## 뼈대 (이 부분만 Jira에 들어갑니다)
+## Skeleton (only this part goes into Jira)
 
 ```text
-[상태 변경] <이전 상태> → <새 상태>
+[Status change] <previous status> → <new status>
 
-■ 무엇을 했나
-<1~3문장. 업무·사용자 관점의 변화만>
+■ What was done
+<1-3 sentences. Only the change from a business/user perspective>
 
-■ 확인된 결과
-<사람이 확인할 수 있는 사실 1~3개. 없으면 "확인 예정" 이라고 적습니다>
+■ Confirmed result
+<1-3 facts a person can verify. If none, write "to be confirmed">
 
-■ 영향 범위
-<누가/무엇이 영향을 받는지. 환경은 "개발/테스트/운영" 종류로만>
+■ Impact
+<who/what is affected. For environments, use the kind only: development/test/production>
 
-■ 남은 일
-<다음에 할 업무. 없으면 "없음">
+■ What's left
+<the next business action. "None" if there isn't one>
 
-■ 참고
-<관련 Jira 키나 업무 문서 이름. 없으면 이 칸을 통째로 지웁니다>
+■ References
+<related Jira key or business document name. Delete this whole block if there is none>
 ```
 
 ---
 
-## 각 칸의 규칙
+## Per-slot rules
 
-### ■ 무엇을 했나
-- 씁니다: 사용자가 겪던 문제가 어떻게 달라지는지, 무슨 결정을 했는지
-- 안 씁니다: 함수·파일·모듈 이름, 코드 구조, 라이브러리 버전, 설정 키 이름
-- 길이: 3문장 이내
+**The canonical definition of what may and may not go in each slot is the table in
+`references/redaction.md` section 1.** The notes below only add what is specific to this note.
 
-### ■ 확인된 결과
-- 씁니다: "같은 조건으로 다시 시도해 정상 처리됨", "담당자 검토 완료", "요청한 자료 전달 완료"
-- 안 씁니다: 로그 원문, 스택트레이스, 측정 도구 출력, 테스트 이름
-- 확인한 게 없으면 솔직하게 "확인 예정"
+### ■ What was done
+- Write: how the problem the user experienced is different now, what was decided
+- Don't: function/file/module names, code structure, library versions, configuration key names
+- Length: 3 sentences or fewer
 
-### ■ 영향 범위
-- 씁니다: "이 화면을 쓰는 사용자 전체", "특정 조건에서만 발생하던 건", "개발 환경에서만 확인"
-- 안 씁니다: 서버·호스트 이름, 주소, 포트, 내부 시스템 코드명
+### ■ Confirmed result
+- Write: "retried under the same conditions and it completed", "reviewed by the owner",
+  "requested materials delivered"
+- Don't: raw logs, stack traces, profiler output, test names
+- If nothing was confirmed, say so honestly: "to be confirmed"
 
-### ■ 남은 일
-- 씁니다: 업무 단위의 다음 행동 ("운영 반영 일정 협의 필요")
-- 안 씁니다: 브랜치 이름, PR 번호, 커밋, 배포 파이프라인 단계 이름
+### ■ Impact
+- Write: "everyone using this screen", "only under specific conditions", "confirmed in development
+  only"
+- Don't: server or host names, addresses, ports, internal system codenames
 
-### ■ 참고
-- 씁니다: `PROJ-124` 같은 Jira 키, 사람이 아는 문서 제목
-- 안 씁니다: 내부 전용 주소, 저장소 경로, 파일 경로
+### ■ What's left
+- Write: the next action in business terms ("needs scheduling for the production rollout")
+- Don't: branch names, PR numbers, commits, deployment pipeline stage names
+
+### ■ References
+- Write: Jira keys like `PROJ-124`, document titles people recognise
+- Don't: internal-only URLs, repository paths, file paths
 
 ---
 
-## 채운 예시 (형태 예시 — 실제 값 아님)
+## Filled example (shape only - not real values)
 
 ```text
-[상태 변경] 진행 중 → 검토 요청
+[Status change] In Progress → In Review
 
-■ 무엇을 했나
-큰 첨부 파일이 있는 요청이 중간에 끊기던 문제를 처리 방식 변경으로 해결했습니다.
+■ What was done
+Fixed requests with large attachments cutting off partway, by changing how they are processed.
 
-■ 확인된 결과
-동일 조건으로 다시 시도했을 때 끝까지 정상 처리되는 것을 확인했습니다.
+■ Confirmed result
+Retried under the same conditions and it completed successfully.
 
-■ 영향 범위
-첨부를 많이 올리는 요청 전체. 현재는 개발 환경에서 확인된 상태입니다.
+■ Impact
+All requests with many attachments. Confirmed in the development environment so far.
 
-■ 남은 일
-검토 후 운영 반영 일정 협의가 필요합니다.
+■ What's left
+Needs scheduling for the production rollout after review.
 
-■ 참고
+■ References
 PROJ-124
 ```
 
-## 마지막 확인
+## Final check
 
-- 검사기 실행: `scripts/scan-sensitive.sh "<초안파일경로>"` → 종료 코드 0
-- `references/redaction.md` 5번의 5줄 자가 점검 통과
-- 확인 게이트에서 **전문**을 사용자에게 보여줬는지
+- Run the scanner: `scripts/scan-sensitive.sh "<draft path>"` → exit code 0
+- Passed the five-line self-check in `references/redaction.md` section 5
+- Showed the user the **full text** at the confirmation gate

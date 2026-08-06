@@ -1,153 +1,164 @@
-# 상태 변경 절차 (Transition)
+# Status change (transition)
 
-작업 항목의 상태를 바꾸고, 왜 바꿨는지를 **정리된 알림 문구**로 함께 남기는 흐름입니다.
-이 스킬에서 가장 조심해서 다루는 동작이므로 아래 7단계를 **건너뛰지 말고 순서대로** 실행합니다.
+Changing a work item's status and leaving a **structured note** explaining why. This is the most
+carefully handled action in the skill - run the seven steps **in order, skipping none.**
 
-전제: `SKILL.md` 0.5의 진입 점검 통과. (통과하지 못했을 때만 `references/entry-check.md` 를 엽니다.)
+Prerequisite: the entry check in `SKILL.md` 0.5 has passed. (Open `references/entry-check.md` only
+when it did not.)
 
 ---
 
-## 1단계 — 대상 확정
+## Step 1 - Fix the target
 
-- 사용자가 준 작업 항목 키를 확인합니다. 형태는 `문자-숫자` 입니다(예: `PROJ-123`).
-- 키를 모르면 `references/read.md` 3번(검색)으로 먼저 찾아서 사용자가 고르게 합니다.
-- **프로젝트 키**는 보통 작업 항목 키의 앞부분입니다(`PROJ-123` → `PROJ`). 이건 일반적인 관례이지
-  보장된 규칙이 아니므로, 3단계 조회가 비거나 오류가 나면 프로젝트 키를 사용자에게 직접 묻거나
-  `references/config.md` 의 프로젝트 목록 조회로 확인합니다.
+- Confirm the work-item key the user gave. The shape is `LETTERS-NUMBER` (e.g. `PROJ-123`).
+- If they do not know the key, find it first with `references/read.md` section 3 (search) and let
+  them choose.
+- The **project key** is usually the front part of the work-item key (`PROJ-123` → `PROJ`). That is
+  a common convention, not a guaranteed rule - if the step 3 lookup comes back empty or errors, ask
+  the user for the project key directly or confirm it with the project list in
+  `references/config.md`.
 
-## 2단계 — 지금 상태 읽기
+## Step 2 - Read the current status
 
 ```bash
 acli jira workitem view <KEY> --fields "status" --json
 ```
 
-- 키는 **플래그 없이** 붙습니다.
-- 응답의 상태 이름을 **그대로** 기억합니다(번역·축약 금지). 이 값이 "이전 상태"가 됩니다.
-- 조회에 실패하면 `references/errors.md` 로 갑니다. 상태를 모른 채로 진행하지 않습니다.
+- The key goes **without a flag** here.
+- Remember the status name **exactly as returned** (no translating, no shortening). That value is
+  the "previous status."
+- If the lookup fails, go to `references/errors.md`. Never proceed without knowing the status.
 
-## 3단계 — 이 프로젝트에서 실제로 쓰이는 상태 모으기
+## Step 3 - Collect the statuses actually in use in this project
 
 ```bash
 acli jira workitem search --jql "project = <your-project>" --fields "status" --json --paginate
 ```
 
-- **`--paginate` 는 필수입니다.** 도움말은 `--paginate` 를 "결과를 끝까지 페이지 단위로 가져오는
-  방식"으로 설명합니다. 반면 **플래그를 하나도 붙이지 않았을 때의 기본 동작은 도움말에 문서화돼 있지
-  않습니다.** 전수 수집이 문서화된 유일한 방법이 `--paginate` 이므로 **항상 붙입니다.** `--paginate`
-  없이 얻은 목록을 "이게 전부"라고 말하지 않습니다.
-- 받은 결과에서 상태 이름을 **중복 없이** 모읍니다. 이것이 후보 목록입니다.
-- 항목이 아주 많은 프로젝트에서는 이 조회가 오래 걸릴 수 있습니다. 오래 걸리면 그 사실을 사용자에게
-  알리고 기다립니다. 목록을 대충 만들지 않습니다.
+- **`--paginate` is mandatory.** The help describes `--paginate` as the way to pull results through
+  to the end, page by page. By contrast, **the default behaviour with no flags at all is not
+  documented in the help.** Since `--paginate` is the only documented way to collect everything,
+  **always attach it.** Never call a list obtained without `--paginate` "everything."
+- Collect the status names from the results, **deduplicated**. That is your candidate list.
+- On a project with very many items this lookup can be slow. If it is, tell the user and wait.
+  Do not throw together an approximate list.
 
-## 4단계 — 후보를 정직하게 제시하고 고르게 하기
+## Step 4 - Present the candidates honestly and let the user choose
 
-사용자에게 보여줄 때 **반드시 다음 성격 그대로** 설명합니다.
+When showing them, describe the list **with exactly this character**:
 
-> 아래는 **이 프로젝트에서 실제로 쓰이고 있는 상태들**입니다.
-> 지금 이 항목에서 그 상태로 **바로 갈 수 있다는 보장은 아닙니다.**
-> (Jira 워크플로가 허용하는 이동 경로는 이 도구로 미리 확인할 수 없습니다.)
-> 목록에 없는 상태 이름을 직접 적어주셔도 됩니다.
+> These are the **statuses actually in use in this project**.
+> That is **not a guarantee this item can move to them right now.**
+> (The transitions a Jira workflow permits cannot be checked in advance with this tool.)
+> You can also type a status name that is not in the list.
 
-**이 한계가 누구의 한계인지 정확히 말해 둡니다(줄이거나 지우지 마세요 — 안전 문장입니다).**
-이것은 Jira의 한계가 아니라 **이 스킬이 쓰는 도구(acli)의 한계**입니다. Jira 쪽에는 특정 항목에서
-지금 갈 수 있는 전환 목록을 돌려주는 API 경로가 있다고 알려져 있지만(커뮤니티 출처로만 확인했고
-공식 문서로 직접 확인하지는 않았습니다), acli에는 그 목록을 조회하는 명령도 플래그도 없습니다.
-그 API를 직접 부르는 길은 이 스킬이 가지 않습니다(P5 — 토큰을 다루지 않습니다). 그래서 이 스킬은
-**실제로 쓰이고 있는 상태 목록**만 제시하고, **유효한지 아닌지의 판정은 Jira가 하도록** 맡깁니다.
-거부되면 서버가 준 이유를 그대로 전합니다.
+**State precisely whose limit this is (do not shorten or delete this - it is a safety sentence).**
+This is not a limit of Jira, but a limit of **the tool this skill uses (acli)**. Jira is said to
+have an API route that returns the transitions currently available for an item (confirmed only via
+community sources, not verified in official documentation), but acli has neither a command nor a
+flag to query that list. This skill does not take the route of calling that API directly (P5 - it
+does not handle tokens). So this skill offers only the **list of statuses in actual use** and
+**leaves the valid/invalid judgement to Jira.** If rejected, pass the server's reason through
+verbatim.
 
-- 현재 상태를 함께 표시하고, 현재 상태는 선택지에서 제외하거나 "지금 상태"로 표시합니다.
-- 사용자가 목록에 없는 이름을 적으면 그대로 받습니다. 목록은 **하한선**이지 전부가 아닙니다.
-- 상태 이름은 사용자가 고른 문자열 그대로 씁니다. 대소문자·공백·언어를 임의로 고치지 않습니다.
-- 다만 **명령에 끼워 넣기 전에** 작업 항목 키와 상태 이름을 **값 안전 규칙**으로 검사합니다:
-  `references/value-safety.md`. 규칙에 걸리면 그대로 넣지 말고 다듬거나 다시 묻습니다.
+- Show the current status alongside, and either exclude it from the choices or mark it as "current."
+- If the user types a name that is not in the list, take it. The list is a **lower bound**, not the
+  whole set.
+- Use the status name exactly as the user chose it. Do not adjust case, spacing, or language.
+- But **before it enters a command**, check the work-item key and status name against the
+  **value safety rules**: `references/value-safety.md`. If a rule trips, do not insert it as-is -
+  clean it up or ask again.
 
-## 5단계 — 상태 알림 문구 작성 + 검사
+## Step 5 - Draft the status note and scan it
 
-1. `templates/transition-note.md` 를 열어 슬롯을 채웁니다.
-2. `references/redaction.md` 규칙을 적용합니다(내부 개발 정보 제거는 **선택이 아니라 기본 동작**).
-3. 초안을 파일로 저장하고 검사기를 돌립니다.
+1. Open `templates/transition-note.md` and fill the slots.
+2. Apply `references/redaction.md` (removing internal engineering detail is **the default, not an
+   option**).
+3. Save the draft to a file and run the scanner.
 
 ```bash
-scripts/scan-sensitive.sh "<초안파일경로>"
+scripts/scan-sensitive.sh "<draft path>"
 ```
 
-- 검사기가 무언가를 찾아내면 **그 부분을 지우거나 업무 언어로 다시 써서** 통과할 때까지 고칩니다.
-- 검사기를 통과하지 못한 문구는 확인 게이트에 올리지 않습니다.
-- 검사기는 보조 장치일 뿐입니다. 통과했다고 해서 "안전 확인 완료"라고 말하지 않습니다. 최종 판단은
-  `references/redaction.md` 의 허용 슬롯 규칙입니다.
+- If the scanner finds something, **delete it or rewrite it in business language** until it passes.
+- A draft that has not passed the scanner never reaches the confirmation gate.
+- The scanner is only a backstop. Passing it does not let you say "safety confirmed." The final
+  judgement is the slot rules in `references/redaction.md`.
 
-## 6단계 — 확인 게이트 (사람이 "네" 라고 말해야 진행)
+## Step 6 - Confirmation gate (a human must say yes)
 
-사용자에게 **두 가지를 모두** 보여줍니다. 하나라도 빠지면 게이트가 아닙니다.
+Show the user **both** of these. Missing either one means it is not a gate.
 
-1. 실행할 명령 원문 (그대로 실행될 문자열)
-2. Jira에 실제로 들어갈 알림 문구 전문
+1. The exact command that will run
+2. The full text of the note that will land in Jira
 
-보여줄 형태(예):
+Shape to show (example - write it in the user's language):
 
 ```text
-이렇게 진행할까요?
+Shall I proceed?
 
-[1] 상태 변경
-    PROJ-123 : <이전 상태> → <새 상태>
-    실행 명령: acli jira workitem transition --key "PROJ-123" --status "<새 상태>" --yes
+[1] Status change
+    PROJ-123 : <previous status> → <new status>
+    Command: acli jira workitem transition --key "PROJ-123" --status "<new status>" --yes
 
-[2] 알림 코멘트 등록
-    실행 명령: acli jira workitem comment create --key PROJ-123 --body-file "<초안파일경로>"
-    들어갈 내용:
+[2] Notification comment
+    Command: acli jira workitem comment create --key PROJ-123 --body-file "<draft path>"
+    Content:
     ---
-    <검사기를 통과한 알림 문구 전문>
+    <the full note text that passed the scanner>
     ---
 
-"네" 라고 답해주시면 실행합니다. 고칠 부분이 있으면 말씀해 주세요.
+Reply yes and I'll run it. Tell me if anything needs changing.
 ```
 
-- 명시적인 동의 없이는 실행하지 않습니다. "알아서 해줘" 같은 포괄 위임을 받아도, **이번 한 건의
-  내용과 명령을 보여주고** 확인을 받습니다.
-- 사용자가 문구를 고쳐달라고 하면 5단계로 돌아가 다시 검사기를 돌립니다.
+- Never execute without explicit agreement. Even given a blanket "just handle it," still **show this
+  one item's content and command** and get confirmation.
+- If the user asks for wording changes, go back to step 5 and re-run the scanner.
 
-## 7단계 — 실행
+## Step 7 - Execute
 
-**순서: 상태 변경 먼저, 코멘트 나중.**
+**Order: status change first, comment second.**
 
 ```bash
 acli jira workitem transition --key "<KEY>" --status "<STATUS>" --yes
 ```
 
 ```bash
-acli jira workitem comment create --key <KEY> --body-file "<초안파일경로>"
+acli jira workitem comment create --key <KEY> --body-file "<draft path>"
 ```
 
-순서를 이렇게 두는 이유: 코멘트를 먼저 남기고 상태 변경이 거부되면, "상태를 바꿨다"고 말하는 코멘트만
-남아 사실과 다른 기록이 됩니다. 상태 변경이 성공한 뒤에 코멘트를 남기면, 반대로 코멘트가 실패해도
-다시 시도하면 됩니다.
+The reason for this order: if you comment first and the status change is then rejected, all that
+remains is a comment claiming the status changed - a false record. Do it the other way and a failed
+comment can simply be retried.
 
-- `--key` 에는 **키 하나만** 넣습니다. 검색식·여러 건·오류 무시 옵션은 쓰지 않습니다.
-- `--yes` 는 이미 사람 확인을 받았기 때문에 붙입니다(CLI가 터미널에서 다시 묻는 것을 막습니다).
-  `comment create` 의 도움말에는 그런 플래그가 없어, 이 스킬은 그 명령을 바로 실행되는 것으로 간주하고
-  다룹니다(`references/write.md` 0번).
-- 상태 변경만 되고 코멘트가 실패하면: 상태는 바뀌었다는 사실을 먼저 알리고, 코멘트만 다시 시도합니다.
+- `--key` takes **exactly one key.** No JQL, no multiple items, no error-ignoring options.
+- `--yes` is attached because a human already confirmed (it stops the CLI asking again in the
+  terminal). `comment create` has no such flag in its help, so this skill treats that command as
+  running immediately (`references/write.md` section 0).
+- If the status change succeeds but the comment fails: report the status change first, then retry
+  only the comment.
 
-## 실패했을 때 (특히 상태 거부)
+## When it fails (especially a rejected status)
 
-Jira가 그 이동을 허용하지 않으면 명령이 실패합니다. 이건 예상 가능한 일이며 사고가 아닙니다.
+If Jira does not permit the move, the command fails. This is expected, not an accident.
 
-1. **서버가 준 문장을 그대로 인용**해서 보여줍니다(임의로 요약하거나 지어내지 않습니다).
-2. 쉬운 말로 옮깁니다: "지금 상태에서 그 상태로 바로 옮기는 건 이 프로젝트 규칙상 막혀 있는 것 같아요."
-3. 이 도구로는 갈 수 있는 상태를 미리 알 수 없다는 한계를 **다시 한 번 솔직히** 말합니다.
-4. 다른 상태를 고르게 하거나(4단계로 복귀), 중간 상태를 거쳐야 할 수 있다고 안내합니다.
-5. 3회 연속 실패하면 더 시도하지 말고, Jira 화면에서 직접 옮기거나 담당자에게 문의하도록 안내합니다.
+1. **Quote the server's sentence verbatim** (do not summarise it away or invent one).
+2. Translate it into plain words: "Moving straight from the current status to that one appears to be
+   blocked by this project's rules."
+3. State the limit **honestly, again**: this tool cannot know in advance which statuses are reachable.
+4. Let them choose another status (back to step 4), or explain an intermediate status may be needed.
+5. After three consecutive failures, stop trying and point them to the Jira UI or the project admin.
 
-자세한 오류 대응: `references/errors.md`
+Detailed error handling: `references/errors.md`
 
-## 마무리 보고
+## Closing report
 
 ```text
-완료했습니다.
-- PROJ-123 상태: <이전 상태> → <새 상태>
-- 알림 코멘트 1건 등록
-확인: acli jira workitem view PROJ-123 --web
+Done.
+- PROJ-123 status: <previous status> → <new status>
+- 1 notification comment posted
+Check it: acli jira workitem view PROJ-123 --web
 ```
 
-실제로 실행해서 성공한 것만 "완료"라고 씁니다. 실행하지 않은 것을 완료로 적지 않습니다.
+Only call something "done" if you actually ran it and it succeeded. Never report an unexecuted step
+as complete.

@@ -1,103 +1,111 @@
-# 오류가 났을 때
+# When something errors
 
-원칙 세 가지.
+Three principles.
 
-1. **원문을 감추지 않습니다.** `acli` 가 낸 문장은 그대로 인용해서 보여줍니다.
-2. **그 위에 쉬운 말 설명을 얹습니다.** 사용자가 다음에 뭘 하면 되는지가 항상 있어야 합니다.
-3. **지어내지 않습니다.** 원인을 모르면 "원인을 특정하지 못했습니다"라고 말합니다.
+1. **Never hide the original.** Quote the sentence `acli` produced, verbatim.
+2. **Put a plain-language explanation on top of it.** There must always be a next step for the user.
+3. **Never invent.** If you do not know the cause, say "I couldn't pin down the cause."
 
-오류 메시지의 언어는 환경에 따라 다릅니다(사이트 언어 설정에 따라 한국어로 나오는 사례가
-확인됐습니다). 문구를 문자열로 정확히 맞춰 판단하려 하지 말고, 실행 결과와 상황으로 판단하세요.
+Error message language varies by environment (cases have been confirmed where messages appear in the
+site's own language rather than English). Do not try to match exact strings - judge from the outcome
+and the situation.
 
 ---
 
-## 자주 나오는 상황
+## Common situations
 
-### `acli` 를 찾을 수 없음 (command not found)
+### `acli` not found (command not found)
 
-- 뜻: 도구가 설치돼 있지 않거나 경로에 없습니다.
-- 대응: `references/entry-check.md` 의 설치 안내. 원문 오류를 사용자에게 그대로 던지지 않습니다.
+- Means: the tool is not installed, or is not on the path.
+- Do: the install guidance in `references/entry-check.md`. Never throw the raw error at the user.
 
-### 로그인되어 있지 않음
+### Not authenticated
 
-- 뜻: 인증 세션이 없거나 만료됐습니다.
-- 대응: `acli jira auth login --web` 안내(`references/entry-check.md`). **토큰을 요구하지 않습니다.**
+- Means: there is no session, or it expired.
+- Do: guide `acli jira auth login --web` (`references/entry-check.md`). **Never ask for a token.**
 
-### 항목이 없거나 볼 권한이 없음
+### Item does not exist or you lack permission
 
-- 확인된 형태(사이트 언어에 따라 다르게 표시될 수 있음):
-  `✗ Error: 이슈가 존재하지 않거나 이를 볼 수 있는 권한이 없습니다.`
-- 뜻: 키를 잘못 적었거나, 그 계정에 권한이 없거나, 다른 사이트의 항목입니다.
-- 대응:
-  1. 키 오타 확인(`PROJ-123` 형태, 대소문자·하이픈).
-  2. 지금 로그인된 사이트가 맞는지 확인(`acli jira auth status`).
-  3. 그래도 안 되면 권한 문제일 수 있으니 담당자 문의를 안내합니다.
+- Confirmed shape (may render in the site's own language):
+  `✗ Error: Issue does not exist or you do not have permission to see it.`
+- Means: the key is wrong, the account lacks permission, or the item belongs to another site.
+- Do:
+  1. Check the key for typos (`PROJ-123` shape, case, hyphen).
+  2. Confirm the currently authenticated site (`acli jira auth status`).
+  3. If it still fails, it may be permissions - point them to the right person.
 
-### 상태 변경이 거부됨
+### Status change rejected
 
-- 뜻: 지금 상태에서 그 상태로 가는 경로가 이 프로젝트 규칙(워크플로)에 없거나, 권한이 없습니다.
-- 대응: `references/transition.md` 의 "실패했을 때" 절차. 서버 문장을 인용하고, 이 도구로는 갈 수 있는
-  상태를 미리 알 수 없다는 한계를 솔직히 말한 뒤 다른 상태를 고르게 합니다.
-- **중요**: 실패는 사고가 아니라 예상된 결과 중 하나입니다. 당황한 어조로 말하지 않습니다.
+- Means: this project's workflow has no path from the current status to that one, or permission is
+  missing.
+- Do: the "when it fails" procedure in `references/transition.md`. Quote the server's sentence, state
+  honestly that this tool cannot know the reachable statuses in advance, and let them pick again.
+- **Important**: a failure here is not an accident, it is one of the expected outcomes. Do not use an
+  alarmed tone.
 
-### 만들기가 거부됨 (필수 필드 등)
+### Creation rejected (required field, etc.)
 
-- 뜻: 그 프로젝트/유형이 만들 때 반드시 요구하는 값이 빠졌습니다.
-- **드문 일이 아닙니다.** 프로젝트마다 필수 필드를 다르게 걸어둘 수 있고, 실제로 **라벨을 필수로
-  걸어둔 프로젝트에서 `--label` 없이 만들었다가 거부된 사례가 관측**됐습니다. 그때 서버가 준 문장은
-  이런 형태였습니다(사이트 언어 설정에 따라 표시가 달라집니다):
+- Means: a value this project/type requires at creation time was missing.
+- **This is not rare.** Projects enforce different required fields, and a case has been **observed
+  where a project requiring labels rejected a creation made without `--label`.** The server's
+  sentence looked like this (rendering varies with the site's language setting):
 
   ```text
-  ✗ Error: 레이블은(는) 필수입니다.
+  ✗ Error: Labels is required.
   ```
 
-- 한계: 어떤 필드가 필수인지 미리 조회하는 명령이 없습니다. 그래서 사전에 막을 수 없습니다. 이건
-  스킬이 덜 만들어져서가 아니라 도구에 그 명령이 없기 때문입니다. 그렇게 설명합니다.
-- 대응: 전체 절차는 `references/write.md` 5-1번입니다. 요약하면,
-  1. 서버 문장을 그대로 보여주고, 그 안의 **필드 이름**을 읽습니다.
-  2. 값을 추측하지 말고, 그 프로젝트에서 **실제로 쓰이는 값을 조회해 후보로** 보여줍니다
-     (`references/config.md` 5번). 후보를 만들 수 없으면 솔직히 말하고 사용자에게 묻습니다.
-  3. 값이 정해지면 **명령이 바뀌었으므로 확인 게이트를 다시** 통과한 뒤 재시도합니다.
-  4. 필드 이름을 읽어낼 수 없거나 3회로도 안 되면 Jira 화면에서 직접 만들도록 안내합니다. 화면에는
-     필수 필드가 표시됩니다.
-- **당황한 어조로 말하지 않습니다.** 상태 변경 거부와 마찬가지로, 예상된 결과 중 하나입니다.
+- Limit: there is no command to look up which fields are required, so it cannot be prevented. This is
+  not an unfinished skill - the tool has no such command. Explain it that way.
+- Do: the full procedure is `references/write.md` section 5-1. In short:
+  1. Show the server's sentence and read the **field name** out of it.
+  2. Do not guess the value - **look up the values actually used in that project and offer them as
+     candidates** (`references/config.md` section 5). If no candidates can be built, say so honestly
+     and ask the user.
+  3. Once the value is set, **the command has changed, so pass the confirmation gate again** before
+     retrying.
+  4. If the field name cannot be read, or three attempts fail, point them to the Jira UI - it
+     displays required fields.
+- **Do not use an alarmed tone.** Like a rejected status change, this is an expected outcome.
 
 ### `failed to output command result in JSON format`
 
-- 뜻: 데이터 문제가 아니라 **출력 처리** 문제입니다. `--json` 결과를 곧바로 버리는 형태로 실행하면
-  이 오류가 납니다(확인된 CLI 동작).
-- 대응: 명령을 고칩니다. 결과를 파이프로 넘기거나(`| jq .`), 변수에 담거나, 실제 파일로 저장합니다.
-  자세한 내용은 `references/command-map.md` 4번.
+- Means: not a data problem but an **output-handling** problem. Running in a form that discards the
+  `--json` result immediately produces this error (confirmed CLI behaviour).
+- Do: fix the command. Pipe the result (`| jq .`), capture it in a variable, or save it to a real
+  file. Details in `references/command-map.md` section 4.
 
-### 플래그를 알 수 없다는 오류
+### Unknown flag error
 
-- 뜻: 그 명령에 없는 플래그를 썼습니다. 명령마다 키를 받는 방식과 플래그가 다릅니다.
-- 대응: `acli <명령> --help` 를 실행해 `Usage:` 줄과 `Flags:` 목록을 확인하고 그대로 고칩니다.
-  도움말의 `Examples` 에는 틀린 예가 있으니 믿지 않습니다(`references/command-map.md` 4번-2).
+- Means: you used a flag that command does not have. Commands differ in how they take the key and
+  which flags exist.
+- Do: run `acli <command> --help`, check the `Usage:` line and the `Flags:` list, and fix it to
+  match. Do not trust the `Examples` in the help - some are wrong
+  (`references/command-map.md` section 4-2).
 
 ---
 
-## 반복 실패 처리
+## Handling repeated failure
 
-- 같은 명령을 **3번까지만** 시도합니다. 매번 다른 원인 가설로 고쳐서 시도합니다. 같은 명령을 그대로
-  반복하지 않습니다.
-- 3번 실패하면 멈추고, 지금까지 시도한 것과 실패 이유를 정리해 보여준 뒤 다음을 안내합니다.
-  - Jira 화면에서 직접 처리
-  - 프로젝트 담당자/관리자 문의
-- **바꾸는 명령은 특히 조심합니다.** 실행했는데 결과가 불확실하면, 무작정 다시 실행하지 말고
-  먼저 현재 상태를 읽어서(`references/read.md`) 이미 반영됐는지 확인합니다. 중복 실행은 코멘트가
-  두 번 달리거나 항목이 두 개 생기는 결과를 낳습니다.
+- Try the same command **at most three times.** Change a different hypothesis each attempt. Never
+  repeat the identical command unchanged.
+- After three failures, stop, summarise what was tried and why it failed, and offer:
+  - Doing it directly in the Jira UI
+  - Asking the project owner or admin
+- **Be especially careful with mutating commands.** If you ran one and the outcome is uncertain, do
+  not blindly re-run - read the current state first (`references/read.md`) to see whether it already
+  applied. A duplicate run means two comments, or two items.
 
-## 사용자에게 보여줄 형태 (예)
+## Shape to show the user (example - write it in their language)
 
 ```text
-상태 변경이 거부됐습니다.
+The status change was rejected.
 
-Jira가 준 메시지:
-  <서버 응답 원문 그대로>
+What Jira said:
+  <the server's response, verbatim>
 
-무슨 뜻이냐면: 지금 상태에서 그 상태로 바로 옮기는 경로가 이 프로젝트 규칙에 없는 것 같습니다.
-아쉽게도 이 도구로는 "지금 갈 수 있는 상태"를 미리 확인할 방법이 없습니다.
+What that means: it looks like this project's rules don't allow moving straight from the current
+status to that one. Unfortunately this tool has no way to check in advance which statuses are
+reachable.
 
-다른 상태로 시도해볼까요? 이 프로젝트에서 쓰이는 상태는 다음과 같습니다: <목록>
+Want to try a different one? These are the statuses in use in this project: <list>
 ```

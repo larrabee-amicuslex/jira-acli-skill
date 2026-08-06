@@ -1,47 +1,15 @@
-# 이 저장소를 다루는 에이전트에게
+# For agents working with this repository
 
-이 저장소는 **스킬 하나를 담은 Claude Code 플러그인 마켓플레이스**입니다. 소스 코드를 받아서
-빌드하거나 파일을 복사해 넣는 저장소가 아닙니다.
+See **[AGENTS.md](AGENTS.md)** — it holds the full guidance and applies to Claude Code as well.
 
-## 설치 요청을 받았다면
+The short version:
 
-사용자가 이 저장소 주소를 주면서 "스킬 설치해줘"라고 했다면, **파일을 복사하지 말고** 다음 두 줄을
-실행하십시오.
-
-```bash
-claude plugin marketplace add larrabee-amicuslex/jira-acli-skill
-claude plugin install jira-acli@jira-acli-skill
-```
-
-확인은 `claude plugin list` 로 합니다. `jira-acli@jira-acli-skill` 이 `enabled` 로 보이면 끝입니다.
-
-- **`git clone` + `cp` 로 설치하지 마세요.** 그 방식은 Claude Code 재시작이 필요한데, 당신은
-  사용자의 세션을 재시작시킬 수 없습니다. "설치했습니다"라고 말해도 실제로는 동작하지 않습니다.
-- `/plugin ...` 은 사람이 Claude Code 안에서 치는 슬래시 명령입니다. **Bash로 실행되지 않습니다.**
-  터미널에서는 위의 `claude plugin ...` 형태를 쓰십시오.
-
-## 설치 다음에 무엇을 할지
-
-**`acli` 설치와 로그인을 대신 실행하지 마세요.** 설치가 끝났다는 것과, 아래 내용을 사용자에게
-안내하는 것까지가 당신의 몫입니다.
-
-- 스킬은 처음 호출될 때 `acli` 설치 여부와 로그인 상태를 **스스로 점검하고 필요한 것만 안내**합니다.
-  그러니 미리 깔아둘 필요가 없습니다. 사용자에게 "지라 이슈 하나 봐줘"라고 해보라고 하면 됩니다.
-- **로그인 명령(`acli jira auth login --web`)은 사용자가 자기 터미널에서 실행하도록 안내하십시오.**
-  명령 자체는 당신이 띄워도 브라우저가 열립니다. 하지만 그 다음 두 단계 — 브라우저 승인과
-  **터미널에서 방향키로 사이트 고르기** — 는 사람이 해야 하고, 그 명령이 살아 있는 동안에만 승인이
-  완료됩니다. 당신이 그냥 Bash로 실행하면 사용자가 사이트 선택 화면에 손댈 수 없어 로그인이 끝나지
-  않고, 프로세스를 끊으면 브라우저에 "성공"이 떠도 로그인되지 않습니다.
-  꼭 대신 띄워야 한다면 `tmux` 같은 **사용자가 이어받을 수 있는 화면**에 띄우고 그 사실을 알리십시오.
-- 토큰을 묻거나 받아 적지 마세요. 이 스킬은 어떤 경우에도 API 토큰을 다루지 않습니다.
-
-## 저장소를 고치는 중이라면
-
-스킬 트리를 수정했다면 커밋 전에 반드시 검증하십시오.
-
-```bash
-bash verify.sh
-```
-
-구조·일반성·금지 패턴·필수 절차·검사기 기능·설치 문자열 정합성을 검사합니다. 검사가 실패하면
-**검사를 느슨하게 고치지 말고** 문서를 고치십시오. 이 검사들은 실제로 있었던 결함에서 나온 것입니다.
+- This repository is a **plugin marketplace containing one skill**. To install it, run
+  `claude plugin marketplace add larrabee-amicuslex/jira-acli-skill` then
+  `claude plugin install jira-acli@jira-acli-skill`. **Do not `git clone` and copy files** — that
+  path needs a Claude Code restart you cannot perform.
+- **Do not run `acli` install or login for the user.** The login needs a human for the browser
+  approval and the terminal site selection, and it only completes while that command stays alive.
+- If you edit this tree, run `bash verify.sh` before committing, and **fix the document rather than
+  the check** when something fails.
+- The skill's instructions are in English; **its output is in the user's language.** Keep that split.

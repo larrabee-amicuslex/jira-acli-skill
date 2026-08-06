@@ -1,80 +1,88 @@
-# 템플릿 — 새 작업 항목 만들기
+# Template - new work item
 
-`references/write.md` 5번에서 씁니다.
+Used by `references/write.md` section 5.
 
-먼저 정할 것 (모르면 `references/config.md`):
+Decide first (see `references/config.md` if unknown):
 
-- 프로젝트 키 — 조회한 목록에서 사용자가 선택
-- 작업 유형 — 조회된 후보에서 사용자가 선택 (자유 문자열이라 목록 밖 값도 가능)
+- **Project key** - the user picks from the fetched list
+- **Work-item type** - the user picks from the fetched candidates (free string, so a value outside
+  the list is allowed too)
 
-그리고 **미리 정할 수 없는 것**이 하나 있습니다: 그 프로젝트가 만들 때 **필수로 요구하는 필드**입니다
-(라벨을 필수로 걸어둔 프로젝트가 실제로 있습니다). 목록을 조회하는 명령이 없어서 거부당해 봐야
-알 수 있습니다. 그러니 **처음 시도가 거부될 수 있다고 사용자에게 미리 말해두고**, 거부되면
-`references/write.md` 5-1번으로 값을 채워 다시 시도합니다. 실패가 아니라 정상 절차입니다.
+And one thing you **cannot** decide in advance: the fields that project **requires at creation**
+(projects that require labels really exist). No command lists them, so you only find out by being
+rejected. So **tell the user up front that the first attempt may be rejected**, and when it is, fill
+in the value via `references/write.md` section 5-1 and retry. That is normal procedure, not a
+failure.
+
+> **Write the actual title and description in the user's language.** The headings below are in
+> English because these instructions are - translate them into whatever language the user and their
+> Jira use.
 
 ---
 
-## 제목 (`--summary`)
+## Title (`--summary`)
 
-한 줄로, 무슨 일인지 바로 알 수 있게.
+One line, immediately telling the reader what this is about.
 
-- 좋음: `첨부가 많은 요청이 중간에 끊기는 현상`
-- 나쁨: `버그` / `수정 요청` / `handler.py 타임아웃 이슈`
-- 파일명·함수명·브랜치명을 제목에 넣지 않습니다.
-- 길이 60자 이내를 목표로 합니다.
+- Good: `Requests with many attachments cut off partway`
+- Bad: `Bug` / `Fix request` / `handler.py timeout issue`
+- No filenames, function names, or branch names in the title.
+- Aim for 60 characters or fewer.
 
-## 설명 (`--description-file` 로 넘길 본문)
+## Description (the body passed via `--description-file`)
 
 ```text
-■ 상황
-<무슨 일이 있었는지 / 무엇이 필요한지 1~3문장>
+■ Situation
+<1-3 sentences: what happened / what is needed>
 
-■ 기대하는 결과
-<끝났다고 볼 수 있는 상태>
+■ Expected outcome
+<the state in which this can be considered finished>
 
-■ 재현 방법 또는 근거
-<사람이 따라 할 수 있는 순서, 또는 이 요청의 근거. 없으면 "해당 없음">
+■ Steps to reproduce, or rationale
+<an order of actions a person can follow, or the basis for this request. "N/A" if neither>
 
-■ 영향 범위
-<누가/무엇이 영향을 받는지. 환경은 "개발/테스트/운영" 종류로만>
+■ Impact
+<who/what is affected. For environments, use the kind only: development/test/production>
 
-■ 참고
-<관련 Jira 키나 업무 문서 이름. 없으면 이 칸을 지웁니다>
+■ References
+<related Jira key or business document name. Delete this block if there is none>
 ```
 
-### 칸별 규칙
+### Per-slot rules
 
-- **상황**: 업무 언어로. 오류 메시지를 그대로 붙이지 말고, 사용자가 무엇을 겪었는지로 씁니다.
-- **재현 방법**: 화면과 동작 순서로 씁니다("A 화면에서 파일 5개를 올리고 저장" 형태). 내부 API 호출,
-  요청 본문, 로그 줄은 넣지 않습니다.
-- **영향 범위**: 서버·호스트 이름 대신 환경 종류와 사용자 범위로 씁니다.
-- 전체에 걸쳐 `references/redaction.md` 2번의 7종은 들어가지 않습니다.
+- **Situation**: business language. Do not paste an error message - describe what the user
+  experienced.
+- **Steps to reproduce**: write it as screens and actions ("upload 5 files on screen A and save").
+  No internal API calls, request bodies, or log lines.
+- **Impact**: environment kind and user scope instead of server or host names.
+- Throughout, none of the seven kinds in `references/redaction.md` section 2 may appear.
 
-## 채운 예시 (형태 예시 — 실제 값 아님)
+## Filled example (shape only - not real values)
 
 ```text
-제목: 첨부가 많은 요청이 중간에 끊기는 현상
+Title: Requests with many attachments cut off partway
 
-■ 상황
-파일을 여러 개 올린 요청이 저장 도중 멈추고, 화면에는 아무 안내가 나오지 않습니다.
+■ Situation
+A request with several files uploaded stops midway through saving, and the screen shows no message.
 
-■ 기대하는 결과
-파일 개수가 많아도 저장이 끝까지 되거나, 실패 시 이유가 화면에 안내됩니다.
+■ Expected outcome
+Saving completes even with many files, or the reason for failure is shown on screen.
 
-■ 재현 방법 또는 근거
-요청 등록 화면에서 파일 10개 이상을 첨부하고 저장하면 재현됩니다.
+■ Steps to reproduce, or rationale
+Reproduces when attaching 10 or more files on the request registration screen and saving.
 
-■ 영향 범위
-첨부를 많이 사용하는 사용자. 현재 개발 환경에서 확인됨.
+■ Impact
+Users who rely on attachments. Confirmed in the development environment.
 
-■ 참고
+■ References
 PROJ-124
 ```
 
-## 만들기 전 확인
+## Before creating
 
-- 검사기 실행: `scripts/scan-sensitive.sh "<초안파일경로>"` → 종료 코드 0
-- 확인 게이트에서 프로젝트·유형·제목·설명 **전문**을 모두 보여줬는지 (`references/write.md` 1번)
-  — 라벨처럼 덧붙이는 값이 있으면 그것도 게이트에 함께 표시했는지
-- 필수 필드 때문에 거부될 수 있음을 미리 안내했는지 (미리 조회할 방법이 없음)
-- 거부돼서 값을 채워 넣었다면, **바뀐 명령으로 게이트를 다시** 통과했는지 (`references/write.md` 5-1번)
+- Run the scanner: `scripts/scan-sensitive.sh "<draft path>"` → exit code 0
+- Did you show the project, type, title, and the **full** description at the confirmation gate
+  (`references/write.md` section 1)? - including any extra values such as labels
+- Did you warn that it may be rejected for a required field (there is no way to look them up)?
+- If it was rejected and you filled in a value, did you **pass the gate again** with the changed
+  command (`references/write.md` section 5-1)?

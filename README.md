@@ -1,182 +1,193 @@
-# jira-acli — Jira·Confluence 작업 도우미 스킬
+**English** | [한국어](README.ko.md)
 
-**이 저장소는 스킬 하나를 담은 Claude Code 플러그인 마켓플레이스입니다.**
+# jira-acli — a Jira & Confluence helper skill
 
-## 설치 — 이 두 줄이면 끝입니다
+**This repository is a Claude Code plugin marketplace containing one skill.**
+
+## Install — two lines
 
 ```bash
 claude plugin marketplace add larrabee-amicuslex/jira-acli-skill
 claude plugin install jira-acli@jira-acli-skill
 ```
 
-**`git clone` 해서 파일을 복사하지 마세요.** 위 두 줄이 설치의 전부입니다.
+**You do not need to `git clone` this and copy files around.** Those two lines are the whole install.
 
-Claude Code 안에서 직접 치고 싶다면 `/plugin marketplace add larrabee-amicuslex/jira-acli-skill`
-→ `/plugin install jira-acli@jira-acli-skill` 입니다.
+Inside Claude Code you can type `/plugin marketplace add larrabee-amicuslex/jira-acli-skill`
+then `/plugin install jira-acli@jira-acli-skill` instead.
 
-설치 확인:
+Check it worked:
 
 ```bash
-claude plugin list          # jira-acli@jira-acli-skill 이 enabled 로 보이면 성공
+claude plugin list          # success looks like jira-acli@jira-acli-skill, enabled
 ```
 
-지울 때는 `claude plugin uninstall jira-acli@jira-acli-skill` 입니다.
+To remove it: `claude plugin uninstall jira-acli@jira-acli-skill`
 
-> **설치를 Claude에게 맡기는 중이라면** — 위 두 줄을 실행하고, 그 다음 아래
-> "설치 후 처음 쓸 때"를 사용자에게 그대로 안내하면 됩니다. `acli` 설치와 로그인까지 대신
-> 실행하려 하지 마세요. 로그인 명령은 사람이 직접 쳐야 합니다(이유는 아래).
+> **If you are an agent installing this for someone** — run the two lines above, then pass on the
+> "First time you use it" section below. Do not run the `acli` install or the login on their behalf.
+> The login command needs a human (reasons below).
 
 ---
 
-## 설치 후 처음 쓸 때
+## First time you use it
 
-**미리 준비할 것은 없습니다.** 스킬을 처음 부르면 `acli` 가 깔려 있는지, 로그인돼 있는지 스킬이
-스스로 확인하고 필요한 것만 안내합니다. 그냥 이렇게 말해보세요.
+**There is nothing to set up in advance.** The first time the skill is called it checks whether
+`acli` is installed and authenticated, and guides you through only what is missing. Just say:
 
 ```
-지라 이슈 하나 봐줘
+show me this Jira issue
 ```
 
-준비가 안 돼 있으면 스킬이 아래 둘 중 필요한 것을 알려줍니다.
+If something is missing, the skill will point you at one of the two below.
 
-### `acli` 설치 (macOS / Homebrew)
+### Installing `acli` (macOS / Homebrew)
 
 ```bash
 brew tap atlassian/homebrew-acli
 brew install acli
 ```
 
-다른 운영체제는 [Atlassian 공식 설치 가이드](https://developer.atlassian.com/cloud/acli/guides/install-acli/)를
-따르세요. 사내 정책으로 막혀 있으면 우회하지 말고 IT 담당자에게 문의하세요.
+On other platforms follow the
+[official install guide](https://developer.atlassian.com/cloud/acli/guides/install-acli/).
+If company policy blocks the install, do not work around it — ask IT.
 
-### 로그인 — 브라우저 승인과 사이트 선택은 사람이 합니다
+### Logging in — the browser approval and site pick are yours
 
 ```bash
 acli jira auth login --web          # Jira
-acli confluence auth login --web    # Confluence (Jira 와 별개 로그인입니다)
+acli confluence auth login --web    # Confluence (a separate login from Jira)
 ```
 
-실행하면 브라우저가 열립니다. 그 뒤 순서는 이렇습니다.
+Running it opens a browser. Then:
 
-1. 브라우저에서 로그인하고 승인합니다.
-2. **터미널로 돌아와 방향키로 사이트를 고릅니다.** 브라우저가 "성공"이라고 알려줘도 이 단계가
-   남아 있습니다.
-3. `acli jira auth status` 가 `✓ Authenticated` 를 보여주면 끝입니다.
+1. Sign in and approve in the browser.
+2. **Return to the terminal and pick the site with the arrow keys.** This step remains even after the
+   browser says "success."
+3. You are done when `acli jira auth status` shows `✓ Authenticated`.
 
-> **에이전트가 이 명령을 띄워주는 것까지는 됩니다.** 다만 위 1·2번은 **사람이 직접** 해야 하므로,
-> 에이전트에게 맡긴다면 **사용자가 그 터미널 화면에 손댈 수 있는 방식**이어야 합니다
-> (예: `tmux` 세션에 띄우고 사용자가 attach). 그냥 백그라운드로 실행하면 사이트 선택 화면에
-> 접근할 수 없어 로그인이 끝나지 않습니다.
+> **An agent can launch this command for you.** But steps 1 and 2 need **a human**, so if you delegate
+> it, it has to run somewhere you can reach the screen (a `tmux` session you attach to, for example).
+> Launched into a plain background it will sit at the site list forever.
 >
-> 그리고 **그 명령이 살아 있는 동안에만 승인이 완료됩니다.** 중간에 프로세스를 끊으면 브라우저에
-> "성공"이 떠도 로그인되지 않습니다. 가장 확실한 방법은 본인 터미널에서 직접 실행하는 것입니다.
+> Also, **the approval only completes while that command is still alive.** Kill the process midway and
+> the browser can say "success" while the login never lands. Running it yourself is the sure path.
 
-Jira와 Confluence는 로그인이 별개라 한쪽만 돼 있을 수 있습니다. Confluence를 쓰지 않으면
-Jira만 로그인해도 됩니다.
+Jira and Confluence log in separately, so one can be authenticated while the other is not. If you
+never touch Confluence, logging into Jira alone is fine.
 
 ---
 
-## 무엇을 해주는 스킬인가
+## What the skill does
 
-터미널을 쓰지 않는 사람이 **Jira 작업 항목을 읽고 / 상태를 바꾸고 / 글을 남길 수 있게** 돕습니다.
-**Confluence 페이지·블로그 읽기와 블로그 글 작성도** 함께 다룹니다.
-실제 실행은 Atlassian 공식 CLI인 `acli` 가 합니다. 명령어를 외울 필요가 없습니다.
+It helps someone who does not live in a terminal **read work items, change their status, and write
+into Jira**. It also **reads Confluence pages, spaces and blog posts, and can publish a blog post.**
+The actual work is done by `acli`, the official Atlassian CLI. You do not have to remember commands.
 
 ```
-나: PROJ-123 무슨 내용인지 정리해줘
-    → 제목·상태·설명·코멘트·첨부를 한국어로 요약해서 보여줍니다
+you: summarize PROJ-123 for me
+     → title, status, description, comments and attachments, written out in your language
 
-나: 이거 진행 중으로 바꿔줘
-    → 이 프로젝트에서 쓰이는 상태를 조회해 고르게 하고,
-      상태 알림 문구를 만들어 보여준 뒤, "네" 를 받고 나서 실행합니다
+you: move it to in progress
+     → looks up the statuses this project actually uses, lets you pick,
+       drafts the status note, shows it to you, and only runs after you say yes
 ```
 
-| 하고 싶은 일 | 이렇게 말하면 됩니다 |
+| What you want | What to say |
 |---|---|
-| 내용 확인 | "이 이슈 뭐야", "내용이랑 첨부 정리해줘", "코멘트 뭐 달렸어" |
-| 상태 변경 | "진행 중으로 옮겨줘", "완료 처리해줘", "리뷰로 넘겨줘" |
-| 코멘트 | "지라에 코멘트 남겨줘" |
-| 새 항목 | "지라에 요청 하나 올려줘", "버그 신고해줘" |
-| Confluence 읽기 | "이 컨플루언스 페이지 정리해줘", "공간 목록 보여줘" |
-| Confluence 쓰기 | "블로그 글 하나 올려줘" (페이지 작성·수정은 안 됩니다) |
+| Check the contents | "what is this issue", "summarize it and its attachments", "what did the comments say" |
+| Change status | "move it to in progress", "mark it done", "send it to review" |
+| Comment | "leave a comment on this ticket" |
+| New item | "file a request in Jira", "report a bug" |
+| Read Confluence | "summarize this Confluence page", "list the spaces" |
+| Write Confluence | "post a blog entry" (creating or editing pages is not possible) |
+
+It replies in whatever language you write in.
 
 ---
 
-## 무엇이 다른가
+## What makes it different
 
-- **쓰기 전에 반드시 물어봅니다.** 만들거나 바꾸거나 남기는 모든 동작은 실행할 명령 원문과 실제로
-  들어갈 내용 전문을 보여주고 명시적인 동의를 받은 뒤에만 실행합니다. **Jira든 Confluence든,
-  상태 변경도 예외가 아닙니다.**
-- **어느 회사, 어느 Jira에서도 그대로 동작합니다.** 사이트 주소·계정·프로젝트·작업 유형·상태 이름을
-  스킬 안에 적어두지 않고 전부 실행 시점에 조회합니다. 설정 파일이 없습니다.
-- **API 토큰을 다루지 않습니다.** 묻지도, 받지도, 저장하지도 않습니다. 브라우저 로그인만 안내합니다.
-- **내부 개발 정보가 새지 않습니다.** 올라갈 문장은 정해진 칸을 업무 언어로 채워 만들고, 로컬 경로·
-  내부 호스트·브랜치/커밋·스택트레이스·자격증명이 섞였는지 검사기로 한 번 더 걸러냅니다.
-
----
-
-## 이 스킬이 하지 못하는 일
-
-되는 척하지 않기 위해 미리 적어둡니다.
-
-- **"지금 이 항목에서 갈 수 있는 상태" 목록을 조회할 수 없습니다.** acli에 그 명령이 없습니다.
-  스킬은 "이 프로젝트에서 실제로 쓰이고 있는 상태"를 보여줄 뿐이고, 그 상태로 바로 갈 수 있는지는
-  Jira가 판정합니다. 거부되면 서버가 준 이유를 그대로 전달합니다.
-- **Jira 첨부 파일은 목록과 정보만 볼 수 있습니다.** 내려받기·올리기 명령이 아예 없습니다.
-- **삭제·보관·복제·대량 작업은 하지 않습니다.** 이유를 설명하고 화면에서 직접 하도록 안내합니다.
-- **필수 필드를 미리 알려주지 못합니다.** 프로젝트가 라벨 같은 필드를 필수로 걸어둘 수 있는데,
-  그 목록을 조회하는 명령이 없어 **첫 시도가 거부되고 나서야** 알 수 있습니다. 고장이 아니라 정상
-  절차입니다 — 거부되면 스킬이 실제 쓰이는 값을 조회해 후보로 보여주고 다시 확인받아 재시도합니다.
-- **Confluence 페이지를 만들거나 고칠 수 없습니다.** `acli confluence page` 에는 `view` 하나뿐입니다.
-  문서 작성·수정은 브라우저에서 하셔야 합니다. Confluence에 쓸 수 있는 것은 **블로그 글 만들기**
-  하나뿐이고, 그마저 수정·삭제 명령이 없어 한 번 올리면 사람이 직접 지워야 합니다.
-- **Confluence 페이지를 검색할 수 없습니다.** 제목·본문으로 찾는 명령이 없어 **페이지 ID를 알아야**
-  읽을 수 있습니다. (블로그 글은 제목으로 찾을 수 있습니다.)
+- **It always asks before writing.** Anything that creates, changes or posts is shown to you first —
+  the exact command and the exact text that will land — and only runs on an explicit yes.
+  **That covers Jira and Confluence alike, status changes included.**
+- **It works on any company's Jira.** Site address, account, project, work-item types and status
+  names are all looked up at run time. Nothing is baked in; there is no config file.
+- **It never handles API tokens.** It does not ask for, accept, or store one. Browser login only.
+- **Internal engineering detail does not leak.** Text bound for Jira is composed by filling defined
+  slots in business language, then scanned again for local paths, internal hosts, branches/commits,
+  stack traces and credentials.
 
 ---
 
-## 안전 장치
+## What it cannot do
 
-| 무엇 | 어떻게 |
+Stated up front rather than discovered later.
+
+- **It cannot tell you which statuses an item can move to right now.** acli has no such command. The
+  skill offers the statuses *actually in use* in the project, and Jira decides whether the move is
+  allowed. If it is rejected, you get the server's reason verbatim.
+- **Jira attachments: list and metadata only.** There is no download or upload command at all.
+- **No deleting, archiving, cloning, or bulk operations.** The skill explains why and points you to
+  the UI.
+- **Required fields cannot be known in advance.** A project may require fields (labels, for example)
+  at creation time, and no command lists them — so **the first attempt gets rejected and only then**
+  do you find out. That is normal, not a fault: the skill then looks up the values that project
+  actually uses, asks you to pick, and retries after confirming again.
+- **Confluence pages cannot be created or edited.** `acli confluence page` has only `view`. Writing
+  and revising documents happens in the browser. The one Confluence write available is **publishing a
+  blog post**, and even that has no edit or delete command — once posted, a human must remove it.
+- **Confluence pages cannot be searched.** With no title or body search command, **you need the page
+  ID** to read one. (Blog posts *can* be found by title.)
+
+---
+
+## Safeguards
+
+| What | How |
 |---|---|
-| 쓰기 전 확인 | 명령 원문 + 들어갈 내용 전문을 보여주고 명시적 동의를 받은 뒤에만 실행 |
-| 대상 한정 | 바꾸는 명령에는 작업 항목 키를 하나만. 검색식으로 여러 건을 한 번에 바꾸지 않음 |
-| 토큰 미취급 | 토큰을 묻지·받지·출력하지·저장하지 않음. 브라우저 로그인만 안내 |
-| 정보 유출 차단 | 정해진 칸을 업무 언어로 채워 문장을 만들고, `scripts/scan-sensitive.sh` 로 재차 검사 |
+| Confirmation before writes | The exact command plus the full text is shown, and it runs only on explicit agreement |
+| One target only | A mutating command carries exactly one work-item key; never a search expression covering many |
+| No tokens | Never asked for, accepted, printed, or stored. Browser login only |
+| Leak prevention | Text is composed into defined slots in business language, then re-checked by `scripts/scan-sensitive.sh` |
 
-`create` 와 `comment create` 는 acli가 되묻지 않고 **즉시 실행**됩니다(확인함). Confluence
-`blog create` 도 마찬가지입니다. 그래서 위 확인 게이트가 유일한 제동 장치입니다.
+`create` and `comment create` were confirmed to run **immediately without asking**, and Confluence
+`blog create` behaves the same way. That is precisely why the confirmation gate above is the only
+brake.
 
 ---
 
-## 저장소 구조
+## Repository layout
 
 ```
 .claude-plugin/
-  marketplace.json          플러그인 마켓플레이스 매니페스트
-  plugin.json               플러그인 매니페스트
+  marketplace.json          plugin marketplace manifest
+  plugin.json               plugin manifest
 skills/jira-acli/
-  SKILL.md                  지도 + 절대 규칙 + 진입 점검
-  references/               절차 (읽기·상태변경·쓰기·Confluence·정보차단·값검사·명령표·오류·설정)
-  templates/                Jira·Confluence에 들어갈 문장 템플릿 4종
-  scripts/scan-sensitive.sh 내부 정보 검사기
-verify.sh                   스킬 트리 자체 검증 (읽기 전용, Jira 호출 없음)
+  SKILL.md                  map + absolute rules + entry check
+  references/               procedures (read, transition, write, Confluence, redaction, value safety, command map, errors, config)
+  templates/                4 templates for text bound for Jira/Confluence
+  scripts/scan-sensitive.sh internal-detail scanner
+verify.sh                   self-check for the skill tree (read-only, no Jira calls)
 ```
+
+The skill's instructions are written in English. **What it produces is not** — it answers you, and
+writes into Jira, in your own language.
 
 ---
 
-## 스킬을 고쳤다면 검증하세요
+## If you change the skill, verify it
 
-`verify.sh` 는 네트워크나 Jira를 건드리지 않고 스킬 트리만 검사합니다. 구조·일반성·금지 패턴·
-필수 절차·검사기 기능·설치 문자열 정합성을 확인합니다.
+`verify.sh` checks the skill tree without touching the network or Jira: structure, generality,
+forbidden patterns, required procedures, scanner behaviour, and install-string consistency.
 
 ```bash
 bash verify.sh
 ```
 
-자기 조직의 고유 문자열(회사명·도메인·프로젝트 키 등)이 섞여 들어가지 않았는지도 함께 확인하려면
-환경변수로 넘기세요. **그 값을 스크립트 파일 안에 적지 마세요** — 이 스크립트도 함께 배포되므로
-적는 순간 같이 나갑니다.
+To also check that your organisation's own strings (company name, domain, project keys) have not
+crept in, pass them by environment variable. **Do not write them into the script** — it ships with
+the skill, so anything written there ships too.
 
 ```bash
 SKILL_FORBIDDEN='mycorp|MYPROJ|myname' bash verify.sh
@@ -184,35 +195,36 @@ SKILL_FORBIDDEN='mycorp|MYPROJ|myname' bash verify.sh
 
 ---
 
-## 문제가 생기면
+## Troubleshooting
 
-| 증상 | 확인할 것 |
+| Symptom | What to check |
 |---|---|
-| `command not found: acli` | acli 미설치. 위 "설치 후 처음 쓸 때" 참고. 설치 후 새 터미널에서 `acli --version` |
-| `unauthorized` | 로그인이 안 된 상태입니다. Jira와 Confluence는 **별개 로그인**입니다 |
-| 로그인 명령이 멈춘 것 같음 | 브라우저 승인 후 **터미널에서 방향키로 사이트를 골라야** 합니다. 사람이 직접 실행해야 하는 명령입니다 |
-| 브라우저는 "성공"인데 로그인이 안 됨 | 터미널의 로그인 명령이 중간에 끊긴 경우입니다. 명령을 다시 실행하고 **끝날 때까지 창을 닫지 마세요** |
-| 사이트 선택 목록이 비어 있음 | 그 계정에 해당 제품(Jira 또는 Confluence) 접근 권한이 없을 수 있습니다. 관리자에게 문의하세요 |
-| 항목이 없거나 권한이 없다고 나옴 | 키 오타, 그리고 `acli jira auth status` 로 지금 로그인된 사이트가 맞는지 |
-| 상태 변경이 거부됨 | 그 이동 경로가 프로젝트 워크플로에 없거나 권한이 없는 경우. 다른 상태로 시도 |
-| 만들기가 거부됨 | 필수 필드 때문일 수 있습니다. 위 "하지 못하는 일" 참고 |
-| 설치했는데 스킬이 안 잡힘 | `claude plugin list` 로 enabled 인지 확인 |
+| `command not found: acli` | acli is not installed. See "First time you use it", then `acli --version` in a new terminal |
+| `unauthorized` | Not logged in. Jira and Confluence are **separate logins** |
+| The login command seems stuck | After browser approval you must **pick the site with arrow keys in the terminal**. It needs a human |
+| Browser says success but login did not stick | The terminal command was cut off midway. Run it again and leave it until it finishes |
+| The site list is empty | That account may have no access to the product (Jira or Confluence). Ask an admin |
+| Item not found or no permission | Check the key for typos, and confirm the authenticated site with `acli jira auth status` |
+| Status change rejected | That transition is not in the project workflow, or permission is missing. Try another status |
+| Creation rejected | Likely a required field. See "What it cannot do" |
+| Installed but the skill never fires | Check `claude plugin list` shows it enabled |
 
-플래그가 헷갈리면 추측하지 말고 `acli <명령> --help` 를 직접 확인하세요. 그것이 유일하게 믿을 수
-있는 출처입니다.
+When a flag is unclear, do not guess — run `acli <command> --help`. That is the only trustworthy
+source.
 
 ---
 
 <details>
-<summary>플러그인을 쓸 수 없는 환경이라면 (폐쇄망·사내 정책 등)</summary>
+<summary>If you cannot use plugins (air-gapped network, company policy, …)</summary>
 
-**에이전트에게 설치를 맡기는 중이라면 이 방법을 쓰지 마세요. 맨 위의 플러그인 설치 두 줄을 쓰십시오.**
+**If an agent is installing this for you, do not use this path. Use the two plugin lines at the top.**
 
-저장소를 받은 뒤, 그 안의 `skills/jira-acli` 디렉터리만 Claude Code 스킬 위치에 놓습니다.
-개인 전체에서 쓰려면 `~/.claude/skills/`, 특정 프로젝트에서만 쓰려면 `<프로젝트>/.claude/skills/`
-입니다. 복사한 뒤 `scripts/scan-sensitive.sh` 에 실행 권한이 남아 있는지 확인하세요 — zip으로
-받았다면 실행 비트가 사라져 검사기가 동작하지 않습니다.
+Obtain the repository, then place just the `skills/jira-acli` directory into a Claude Code skills
+location: `~/.claude/skills/` for everywhere, or `<project>/.claude/skills/` for one project.
+After copying, confirm `scripts/scan-sensitive.sh` still has its executable bit — a zip download
+strips it, and the scanner will not run.
 
-**이 방법은 Claude Code를 다시 시작해야 스킬이 잡힙니다.** 플러그인 설치에는 없는 제약입니다.
+**This path requires restarting Claude Code before the skill is picked up.** The plugin install does
+not.
 
 </details>

@@ -1,88 +1,94 @@
-# Jira에 나가는 문장에서 내부 정보 빼기 (기본 동작)
+# Keeping internal detail out of anything posted (default behaviour)
 
-**목표: 주요 내용은 다 들어가되, 개발 내부 사정은 드러나지 않게.**
+**Goal: everything that matters gets in; nothing about the engineering interior does.**
 
-Jira 항목과 코멘트는 개발팀 밖의 사람도 봅니다(기획·법무·영업·고객사·감사). 개발 과정에서만
-의미 있는 정보(로컬 경로, 내부 서버 이름, 브랜치·커밋, 오류 스택, 자격증명)는 밖에서 보면
-아무 의미도 없고, 어떤 것은 새어 나가면 안 되는 정보입니다.
+Jira items and comments are read by people outside the engineering team (product, legal, sales,
+customers, audit). Information that only means something during development - local paths, internal
+server names, branches and commits, error stacks, credentials - is meaningless to them, and some of
+it must never leak.
 
-**이건 "주의하세요" 수준의 권고가 아니라, 문장을 만드는 방식 그 자체입니다.**
-아래 1번(구성 방식)이 기본 동작이고, 3번(검사기)은 사람이 실수했을 때 걸러주는 두 번째 그물입니다.
+**This is not a "please be careful" advisory. It is how the sentences get built.**
+Section 1 (how you compose) is the default behaviour; section 4 (the scanner) is the second net that
+catches human mistakes.
 
 ---
 
-## 1. 방식: 붙여넣지 말고, 정해진 칸을 채운다
+## 1. Method: don't paste - fill defined slots
 
-Jira에 들어갈 문장은 **로그나 대화 내용을 옮겨 담아 만들지 않습니다.** 템플릿의 정해진 칸을
-업무 언어로 **새로 써서** 만듭니다.
+Text going into Jira is **never assembled by copying logs or conversation.** You **write it fresh**
+into the template's slots, in business language, in the user's language.
 
-- 옮겨 담기(복사) → 내부 정보가 딸려 들어옴 (금지)
-- 다시 쓰기(요약) → 필요한 내용만 남음 (기본)
+- Copying → internal detail rides along (forbidden)
+- Rewriting (summarising) → only what is needed remains (default)
 
-각 칸에 **무엇을 쓸 수 있는지가 정해져 있습니다**:
+**What may go in each slot is defined:**
 
-| 칸 | 여기에 쓸 수 있는 것 | 여기에 쓰면 안 되는 것 |
+| Slot | What belongs here | What must not |
 |---|---|---|
-| 무엇을 했나 | 사용자·업무 관점의 변화 ("첨부 파일이 큰 경우에도 요청이 끊기지 않도록 처리 방식을 바꿨습니다") | 함수/파일/모듈 이름, 코드 구조 설명 |
-| 확인된 결과 | 사람이 확인할 수 있는 사실 ("같은 조건으로 다시 시도했을 때 정상 처리됨") | 로그 원문, 측정 도구 출력, 스택트레이스 |
-| 영향 범위 | 업무 범위 ("이 화면을 쓰는 사용자 전체", "개발 환경에서만 확인") | 서버 이름, 호스트, 포트, IP |
-| 남은 일 | 다음에 할 업무 | 브랜치 이름, PR 번호, 커밋 해시 |
-| 참고 | Jira 키(`PROJ-124`), 업무 문서 이름 | 내부 위키의 내부 전용 주소, 저장소 경로 |
+| What was done | The change from a user/business view ("changed how uploads are processed so large attachments no longer cut off") | Function/file/module names, code structure |
+| Confirmed result | Facts a person can verify ("retried under the same conditions and it completed") | Raw logs, tool output, stack traces |
+| Impact | Business scope ("everyone using this screen", "confirmed in the development environment only") | Server names, hosts, ports, IPs |
+| What's left | The next business action | Branch names, PR numbers, commit hashes |
+| References | Jira keys (`PROJ-124`), business document names | Internal-only wiki URLs, repository paths |
 
-칸에 넣을 말이 "업무 언어로는 설명이 안 되는데?" 싶으면, 그건 **넣지 않아도 되는 정보**입니다.
+If something "can't really be explained in business language," that is **information that does not
+need to be there.**
 
-## 2. 절대 들어가지 않는 것 (7종)
+## 2. Never included (seven kinds)
 
-| # | 종류 | 예 (형태만 보여주는 예시) |
+| # | Kind | Example (shape only, not a real value) |
 |---|---|---|
-| 1 | 로컬/절대 파일 경로 | `/home/<user>/work/service/src/handler.py`, `C:\work\service\src` |
-| 2 | 소스 파일·코드 위치 | `src/api/handler.py:142`, `UserService.validate()` |
-| 3 | 내부 호스트·주소·포트 | `api-internal.example.local`, `localhost:8080`, `10.x.x.x` 대역 주소 |
-| 4 | 브랜치·커밋·PR | `feature/ABC-12-refactor`, 커밋 해시(`a1b2c3d`), `PR #482` |
-| 5 | 오류 스택·로그 원문 | `Traceback (most recent call last): ...`, `[DEBUG] ...` 로그 줄 |
-| 6 | 자격증명·비밀값 | 토큰, API 키, 비밀번호, `Authorization:` 헤더, 개인 키 |
-| 7 | 사람의 개인정보 | 개인 연락처, 사번, 주민등록번호 등. 업무 담당자는 이름/계정까지만 |
+| 1 | Local/absolute file paths | `/home/<user>/work/service/src/handler.py`, `C:\work\service\src` |
+| 2 | Source files and code locations | `src/api/handler.py:142`, `UserService.validate()` |
+| 3 | Internal hosts, addresses, ports | `api-internal.example.local`, `localhost:8080`, `10.x.x.x` range |
+| 4 | Branches, commits, PRs | `feature/ABC-12-refactor`, commit hash (`a1b2c3d`), `PR #482` |
+| 5 | Error stacks and raw logs | `Traceback (most recent call last): ...`, `[DEBUG] ...` lines |
+| 6 | Credentials and secrets | Tokens, API keys, passwords, `Authorization:` headers, private keys |
+| 7 | Personal information | Personal contact details, employee numbers, national ID numbers. For a colleague, name or account at most |
 
-애매하면 **뺍니다.** 뺐을 때 문장이 이상해지면, 그 부분을 업무 언어로 바꿔 씁니다.
+When in doubt, **leave it out.** If removing it makes the sentence odd, rewrite that part in
+business language.
 
-## 3. 다시 쓰기 예시 (형태 예시 — 실제 값 아님)
+## 3. Rewriting examples (shape only - not real values)
 
-| 이렇게 쓰면 안 됨 | 이렇게 씁니다 |
+| Don't write this | Write this |
 |---|---|
-| `/home/<user>/work/svc/src/upload.py 에서 타임아웃 20s → 60s` | 큰 파일 업로드가 시간 초과로 끊기던 문제를 처리 시간 여유를 늘려 해결했습니다 |
-| `feature/ABC-12 브랜치에서 수정, a1b2c3d 커밋` | 수정 작업을 마쳤습니다 |
-| `Traceback ... KeyError: 'user_id'` | 특정 조건에서 필수 정보가 비어 있어 처리가 중단되던 원인을 확인했습니다 |
-| `api-internal.example.local:8080 에서 500 발생` | 개발 환경에서 오류가 재현되는 것을 확인했습니다 |
-| `.env 의 API_KEY 값이 잘못됨` | 연동 설정값이 잘못 지정돼 있었습니다 |
+| `/home/<user>/work/svc/src/upload.py timeout 20s → 60s` | Fixed large uploads cutting off by allowing more processing time |
+| `fixed on feature/ABC-12, commit a1b2c3d` | The fix is complete |
+| `Traceback ... KeyError: 'user_id'` | Identified the cause: under certain conditions a required value was empty and processing stopped |
+| `500 from api-internal.example.local:8080` | Reproduced the error in the development environment |
+| `API_KEY in .env was wrong` | An integration setting was configured incorrectly |
 
-환경을 말해야 하면 **이름 대신 종류**로 씁니다: "개발 환경", "테스트 환경", "운영 환경".
+When you must mention an environment, use **the kind, not the name**: "development", "test",
+"production".
 
-## 4. 검사기 (두 번째 그물)
+## 4. The scanner (second net)
 
-초안을 파일로 저장한 뒤 반드시 실행합니다.
+Save the draft to a file and always run this.
 
 ```bash
-scripts/scan-sensitive.sh "<초안파일경로>"
+scripts/scan-sensitive.sh "<draft path>"
 ```
 
-- 종료 코드 `0`: 걸린 것 없음 → 확인 게이트로 진행
-- 종료 코드 `1`: 의심 문구를 줄 번호와 함께 출력 → **그 부분을 고치고 다시 실행**
-- 검사기가 찾지 못하는 형태도 있습니다. **통과 = 안전 보증이 아닙니다.** 최종 판단은 1번의 칸 규칙과
-  2번의 7종 목록입니다. 사용자에게 "검사 통과했으니 안전합니다" 라고 말하지 않습니다.
-- **알려진 한계 — 빗금(`/`) 없는 브랜치 이름.** `feature/...` 처럼 빗금이 들어간 형태는 검사기가
-  잡지만, `my-private-branch` 같이 빗금 없는 이름은 **잡지 못합니다.** 하이픈이 들어간 보통 낱말과
-  기계적으로 구분할 방법이 없어, 패턴을 넓히면 정상 문장이 무더기로 걸립니다. 이런 값은 검사기가
-  아니라 **1번의 칸 규칙(첫 번째 그물)** 에서 걸러야 합니다 — "남은 일" 칸에는 브랜치 이름을 쓰지
-  않습니다.
-- 검사기가 잘못 걸었다고 판단되는 경우(예: 업무 문서 이름이 파일 이름처럼 보임)에도, 그 판단 근거를
-  확인 게이트에서 사용자에게 한 줄로 알려주고 사용자가 판단하게 합니다.
+- Exit code `0`: nothing caught → proceed to the confirmation gate
+- Exit code `1`: suspicious text printed with line numbers → **fix it and run again**
+- Some shapes the scanner cannot find. **Passing is not a safety guarantee.** The final judgement is
+  the slot rules in section 1 and the seven kinds in section 2. Never tell the user "the scan passed
+  so it's safe."
+- **Known limit - branch names without a slash.** Shapes like `feature/...` are caught, but a name
+  like `my-private-branch` **is not.** There is no mechanical way to tell it from an ordinary
+  hyphenated phrase, and widening the pattern would flag normal sentences en masse. Values like that
+  must be caught by **the slot rules in section 1 (the first net)** - branch names do not belong in
+  the "what's left" slot.
+- If you believe the scanner flagged something incorrectly (e.g. a business document name that looks
+  like a filename), still tell the user your reasoning in one line at the gate and let them decide.
 
-## 5. 확인 게이트에서의 최종 점검 (5줄 자가 점검)
+## 5. Final self-check at the gate (five lines)
 
-- [ ] 이 문장만 읽고도 **무슨 일이 있었는지** 업무 담당자가 이해할 수 있는가
-- [ ] 경로·파일명·호스트·브랜치·커밋·스택·비밀값이 **하나도** 없는가
-- [ ] 로그나 대화를 **복사해 붙인** 부분이 없는가 (전부 다시 쓴 문장인가)
-- [ ] 검사기를 통과했는가
-- [ ] 사용자에게 **문구 전문**을 보여줬는가 (요약이 아니라 실제 들어갈 글 전체)
+- [ ] Can a business colleague understand **what happened** from this text alone?
+- [ ] Is there **not a single** path, filename, host, branch, commit, stack, or secret?
+- [ ] Is there no **copy-pasted** log or conversation (is every sentence rewritten)?
+- [ ] Did it pass the scanner?
+- [ ] Did you show the user the **full text** (the actual content, not a summary)?
 
-다섯 개가 모두 예일 때만 실행합니다.
+Execute only when all five are yes.

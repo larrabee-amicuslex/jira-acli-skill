@@ -1,65 +1,70 @@
-# 템플릿 — Confluence 블로그 글
+# Template - Confluence blog post
 
-`references/confluence.md` 2번에서 씁니다.
+Used by `references/confluence.md` section 2.
 
-먼저 정할 것:
+Decide first:
 
-- **공간** — 사용자가 말한 공간 **키**를 `space list` 로 조회해 **ID**로 바꿔 둡니다.
-- **게시 상태** — 바로 게시(`current`, 기본값)인지 초안(`--status draft`)인지. 사용자에게 물어보고,
-  게이트에서 어느 쪽인지 분명히 말합니다.
+- **Space** - take the space **key** the user named and convert it to an **ID** via `space list`.
+- **Publication state** - published immediately (`current`, the default) or a draft
+  (`--status draft`). Ask the user, and state clearly at the gate which one it will be.
+
+> **Write the actual title and body in the user's language.** The headings below are in English
+> because these instructions are - translate them into whatever language the user's Confluence uses.
 
 ---
 
-## 본문 형식 — 저장 형식(XHTML)입니다
+## Body format - this is storage format (XHTML)
 
-Confluence 본문은 마크다운이 아닙니다. `--from-file` 로 넘길 파일에는 **단락을 `<p>` 로 감싼
-HTML**을 씁니다. 복잡한 서식은 쓰지 않습니다 — 단락, 목록, 굵게 정도면 충분하고, 그 이상은
-브라우저에서 사람이 다듬는 편이 낫습니다.
+Confluence bodies are not Markdown. The file passed with `--from-file` should contain **HTML with
+paragraphs wrapped in `<p>`**. Do not reach for complex formatting - paragraphs, lists, and bold are
+enough; anything beyond that is better tidied by a human in the browser.
 
 ```html
-<p>첫 단락.</p>
-<p>둘째 단락.</p>
+<p>First paragraph.</p>
+<p>Second paragraph.</p>
 <ul>
-  <li>목록 항목</li>
+  <li>List item</li>
 </ul>
 ```
 
-## 제목
+## Title
 
-- 한 줄로, 무슨 글인지 바로 알 수 있게. 60자 이내를 목표로 합니다.
-- 파일명·함수명·브랜치명을 제목에 넣지 않습니다.
+- One line, immediately telling the reader what the post is about. Aim for 60 characters or fewer.
+- No filenames, function names, or branch names in the title.
 
-## 뼈대 (이 부분만 Confluence에 들어갑니다)
+## Skeleton (only this part goes into Confluence)
 
 ```html
-<p><strong>무엇을 알리는 글인가</strong></p>
-<p>1~3문장. 읽는 사람이 무엇을 알아야 하는지.</p>
+<p><strong>What this announces</strong></p>
+<p>1-3 sentences. What the reader needs to know.</p>
 
-<p><strong>배경</strong></p>
-<p>왜 이 일이 있었는지. 업무 언어로.</p>
+<p><strong>Background</strong></p>
+<p>Why this happened, in business language.</p>
 
-<p><strong>영향 범위</strong></p>
-<p>누가 무엇을 하게 되는지. 환경은 "개발/테스트/운영" 종류로만.</p>
+<p><strong>Impact</strong></p>
+<p>Who does what differently. For environments, use the kind only: development/test/production.</p>
 
-<p><strong>앞으로</strong></p>
-<p>다음에 무슨 일이 있을지, 언제쯤인지. 없으면 이 칸을 지웁니다.</p>
+<p><strong>What's next</strong></p>
+<p>What happens next and roughly when. Delete this block if there is nothing.</p>
 
-<p><strong>문의</strong></p>
-<p>누구에게 물으면 되는지. 이름이나 팀 이름까지만.</p>
+<p><strong>Questions</strong></p>
+<p>Who to ask. Name or team name only.</p>
 ```
 
-## 각 칸의 규칙
+## Per-slot rules
 
-**각 칸에 쓸 수 있는 것과 쓸 수 없는 것의 정본은 `references/redaction.md` 1번 표입니다.**
-여기서는 Confluence라서 특히 조심할 것만 적습니다.
+**The canonical definition of what may and may not go in each slot is the table in
+`references/redaction.md` section 1.** Below is only what is specific to Confluence.
 
-- **Confluence 문서는 Jira 항목보다 더 넓은 사람이 봅니다.** 개발팀 밖에서 읽는다고 전제하고 씁니다.
-- 오류 메시지·로그·스택트레이스를 붙여넣지 않습니다. 무슨 일이 있었는지를 업무 언어로 다시 씁니다.
-- 서버·호스트 이름 대신 환경 종류로 씁니다.
-- 사람을 언급할 때는 이름이나 팀 이름까지만. 연락처·사번은 넣지 않습니다.
+- **Confluence documents are read by an even wider audience than Jira items.** Write assuming
+  readers outside engineering.
+- Never paste error messages, logs, or stack traces. Rewrite what happened in business language.
+- Use environment kinds instead of server or host names.
+- When mentioning people, use a name or team name only. No contact details or employee numbers.
 
-## 만들기 전 확인
+## Before creating
 
-- 검사기 실행: `scripts/scan-sensitive.sh "<초안파일경로>"` → 종료 코드 0
-- 확인 게이트에서 **공간(키와 ID) · 제목 · 본문 전문 · 게시 상태**를 모두 보여줬는지
-- **이 스킬로는 지울 수 없다**는 사실을 알렸는지 (`blog` 에 수정·삭제 명령이 없습니다)
+- Run the scanner: `scripts/scan-sensitive.sh "<draft path>"` → exit code 0
+- Did you show the **space (key and ID), title, full body, and publication state** at the
+  confirmation gate?
+- Did you tell the user that **this skill cannot delete it** (`blog` has no edit or delete command)?

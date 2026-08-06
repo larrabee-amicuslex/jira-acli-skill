@@ -1,36 +1,42 @@
-# 값 안전 규칙 — 사용자에게서 온 값을 명령에 끼워 넣기 전에
+# Value safety - before a user-supplied value enters a command
 
-명령 문자열에 들어가는 값(작업 항목 키, 상태 이름, 제목)은 대부분 **사용자가 준 문자열**입니다.
-큰따옴표 안에 그대로 끼워 넣으면, 값 안에 따옴표가 들어 있을 때 **명령의 모양 자체가 바뀝니다**
-(따옴표가 닫히고 그 뒤가 별개의 조각으로 읽힙니다). 넣기 전에 아래 세 가지를 지킵니다.
-이 파일이 이 스킬의 **유일한 값 검사 기준(정본)** 입니다. 쓰기 절차(`write.md`)와 상태 변경 절차
-(`transition.md`), 명령표(`command-map.md` 6번)는 모두 여기를 가리킵니다.
+Most values that end up inside a command string (work-item key, status name, title) are **strings
+the user handed you**. Dropping one straight into double quotes can **change the shape of the
+command itself** when the value contains a quote - the quote closes and everything after it is read
+as a separate argument. Apply these three checks first.
 
-## (1) 작업 항목 키는 모양부터 검사한다
+This file is the **single canonical value-check standard** for this skill. The write procedure
+(`write.md`), the status-change procedure (`transition.md`), and the command map
+(`command-map.md` section 6) all point here.
 
-키는 다음 모양일 때만 명령에 넣습니다.
+## (1) Check the shape of a work-item key first
+
+Only put a key into a command when it matches:
 
 ```text
 ^[A-Z][A-Z0-9]*-[0-9]+$
 ```
 
-- 통과 예: `PROJ-123`
-- 거부 예: 따옴표·공백·세미콜론·빗금이 섞인 값, 하이픈 뒤가 숫자가 아닌 값, 소문자로 시작하는 값
-- 맞지 않으면 **명령에 넣지 않고** 사용자에게 다시 묻습니다. 임의로 다듬어 넣지 않습니다.
+- Passes: `PROJ-123`
+- Rejected: values containing quotes, spaces, semicolons, or slashes; a non-numeric part after the
+  hyphen; anything starting lowercase
+- If it does not match, **do not put it in the command** - ask the user again. Never silently
+  reshape it.
 
-## (2) 명령줄에 그대로 들어가는 자유 문장에는 세 글자가 들어가면 안 된다
+## (2) Three characters must not appear in free text that goes on the command line
 
-제목(`--summary`)과 상태 이름(`--status`)은 파일로 넘기는 플래그가 없어 명령줄에 그대로 들어갑니다.
-이 값들에 **큰따옴표(`"`), 백틱, 달러 기호(`$`)** 가 들어 있으면 그대로 실행하지 않습니다.
+The title (`--summary`) and the status name (`--status`) have no file-based flag, so they land on
+the command line verbatim. If those values contain a **double quote (`"`), a backtick, or a dollar
+sign (`$`)**, do not run them as-is.
 
-- 파일로 넘길 수 있는 값(본문·설명)이면 **파일 플래그로 돌립니다** — `--body-file` /
-  `--description-file` 이 원래 그 용도입니다(`write.md` 3번).
-- 파일 플래그가 없는 값(제목·상태 이름)이면 그 글자를 빼거나 바꾼 뒤, **바꾼 결과를 확인 게이트에서
-  그대로 보여주고** 사용자 동의를 받습니다. 몰래 고치지 않습니다.
-- 사용자가 그 글자가 꼭 필요하다고 하면, 이 스킬로 처리하지 않고 Jira 화면에서 직접 하도록 안내합니다.
+- If the value can go through a file (body, description), **route it to the file flag** -
+  `--body-file` / `--description-file` exist exactly for that (`write.md` section 3).
+- If there is no file flag (title, status name), remove or replace the character, then **show the
+  changed result at the confirmation gate** and get the user's agreement. Never fix it silently.
+- If the user insists the character is required, do not handle it here - point them to the Jira UI.
 
-## (3) 확인 게이트에 보여준 문자열이 곧 실행되는 문자열이다
+## (3) The string shown at the gate is the string that runs
 
-확인 게이트에는 **다듬기가 끝난 최종 명령 원문**을 보여줍니다. 보여준 것과 다른 문자열을 실행하지
-않습니다. 값을 손봤으면 손본 뒤의 명령을 보여줍니다. 이 규칙이 깨지면 게이트는 아무것도 지키지
-못합니다.
+The confirmation gate shows the **final command text, after any cleanup**. Never execute something
+different from what you showed. If you adjusted a value, show the adjusted command. Break this rule
+and the gate protects nothing.

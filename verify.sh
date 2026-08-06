@@ -34,7 +34,8 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$ROOT/verify.sh"
 SKILL="$ROOT/skills/jira-acli"
-DOCS="$ROOT/README.md"   # 배포물이므로 일반성 검사(G) 대상에 포함한다
+DOCS="$ROOT/README.md"       # M 축(설치 문자열·순서)은 영어판 기준
+DOCS_ALL="$ROOT/README.md $ROOT/README.ko.md"   # 배포되는 모든 문서 — 일반성(G) 검사 대상
 FAIL=0
 PASSN=0
 
@@ -150,25 +151,25 @@ echo "== G: 일반성 =="
 # — 이 스크립트도 스킬과 함께 배포되므로, 여기 적는 순간 그 값이 같이 나간다.
 GEN_PAT='/(Users|home)/[A-Za-z0-9._-]+|/root/'
 # README.md 도 배포물이다. 스킬 본문만 검사하면 README 로 회사 정보가 새는 경로가 열린 채 남는다.
-GEN="$(grep -rniE "$GEN_PAT" "$SKILL" "$DOCS" || true)"
+GEN="$(grep -rniE "$GEN_PAT" "$SKILL" $DOCS_ALL || true)"
 if [ -n "${SKILL_FORBIDDEN:-}" ]; then
   # 조직 고유어가 주어지면 스킬·README 뿐 아니라 이 스크립트 자신도 검사한다.
-  GEN="$GEN$(grep -rniE "$SKILL_FORBIDDEN" "$SKILL" "$DOCS" "$SELF" || true)"
+  GEN="$GEN$(grep -rniE "$SKILL_FORBIDDEN" "$SKILL" $DOCS_ALL "$SELF" || true)"
 fi
 if [ -z "$GEN" ]; then pass "G1 사용자 홈경로${SKILL_FORBIDDEN:+ 및 지정 금칙어} 하드코딩 없음 (0건)"
 else fail "G1 하드코딩 발견" "$GEN"; fi
 
-ATL="$(grep -rnoE '[A-Za-z0-9_.-]*\.atlassian\.net' "$SKILL" "$DOCS" | grep -viE 'YOURSITE\.atlassian\.net' || true)"
+ATL="$(grep -rnoE '[A-Za-z0-9_.-]*\.atlassian\.net' "$SKILL" $DOCS_ALL | grep -viE 'YOURSITE\.atlassian\.net' || true)"
 if [ -z "$ATL" ]; then pass "G2 .atlassian.net 표기는 자리표시자(YOURSITE)뿐"
 else fail "G2 실제처럼 보이는 사이트 주소 발견" "$ATL"; fi
 
-MAIL="$(grep -rnoE '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' "$SKILL" "$DOCS" || true)"
+MAIL="$(grep -rnoE '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}' "$SKILL" $DOCS_ALL || true)"
 if [ -z "$MAIL" ]; then pass "G3 구체적인 이메일 주소 없음"
 else fail "G3 이메일 주소 발견" "$MAIL"; fi
 
 # 예외 'Z0-9': command-map.md 6번의 키 모양 정규식 문자클래스 [A-Z0-9] 에서 잘려 나오는 조각이며
 #            실제 작업항목 키가 아니다. 토큰 전체가 정확히 Z0-9 인 경우에만 제외한다.
-KEYS="$(grep -rnoE '\b[A-Z][A-Z0-9]{1,9}-[0-9]+\b' "$SKILL" "$DOCS" | grep -viE 'PROJ-[0-9]+|KEY-[0-9]+|ABC-[0-9]+|:Z0-9$' || true)"
+KEYS="$(grep -rnoE '\b[A-Z][A-Z0-9]{1,9}-[0-9]+\b' "$SKILL" $DOCS_ALL | grep -viE 'PROJ-[0-9]+|KEY-[0-9]+|ABC-[0-9]+|:Z0-9$' || true)"
 if [ -z "$KEYS" ]; then pass "G4 예시 작업항목 키는 자리표시자(PROJ-###)뿐"
 else fail "G4 실제처럼 보이는 작업항목 키 발견" "$KEYS"; fi
 
@@ -223,14 +224,22 @@ else fail "M4 README 에서 git clone 이 플러그인 설치보다 먼저 나�
   "plugin=${M_PLUGIN_LINE:-없음} clone=${M_CLONE_LINE:-없음}"; fi
 
 # M5 — 에이전트용 지시 파일이 있고, clone 설치를 억제한다 (이미 clone 한 경우의 복구 백스톱)
-if [ -s "$ROOT/CLAUDE.md" ] && grep -q '복사하지 말고' "$ROOT/CLAUDE.md"; then
-  pass "M5 CLAUDE.md 가 파일 복사 설치를 억제함"
-else fail "M5 CLAUDE.md 가 없거나 복사 설치 억제 문장이 없음"; fi
+M5C=0; M5A=0
+[ -s "$ROOT/CLAUDE.md" ] && grep -q 'Do not `git clone` and copy files' "$ROOT/CLAUDE.md" && M5C=1
+[ -s "$ROOT/AGENTS.md" ] && grep -q 'do not copy files' "$ROOT/AGENTS.md" && M5A=1
+if [ "$M5C" -eq 1 ] && [ "$M5A" -eq 1 ]; then
+  pass "M5 CLAUDE.md/AGENTS.md 가 파일 복사 설치를 억제함"
+else fail "M5 에이전트 지시 파일의 복사 설치 억제가 없음" "CLAUDE.md=$M5C AGENTS.md=$M5A"; fi
 
 # M6 — 로그인은 사람이 직접 실행해야 한다는 경고가 README 에 있다 (스킬만 알고 README 가 모르면
 #      설치를 대행하는 에이전트가 대화형 명령을 Bash 로 실행해 멈춘다 — 실제로 발생한 사고다)
-if grep -q '사람이 직접' "$DOCS"; then pass "M6 README 에 대화형 로그인 경고 있음"
+if grep -q 'need \*\*a human\*\*' "$DOCS"; then pass "M6 README 에 대화형 로그인 경고 있음"
 else fail "M6 README 에 '사람이 직접 실행' 경고가 없음"; fi
+
+# M7 — 두 README 가 함께 존재하고 서로를 가리키는지 (한쪽만 갱신되어 갈라지는 것을 막는 최소 가드)
+if [ -s "$ROOT/README.ko.md" ] && grep -q 'README.ko.md' "$ROOT/README.md" && grep -q 'README.md' "$ROOT/README.ko.md"; then
+  pass "M7 영어/한국어 README 가 모두 존재하고 상호 링크됨"
+else fail "M7 README 두 버전 중 하나가 없거나 상호 링크가 끊김"; fi
 
 echo
 echo "== N: 금지 패턴 (명령 템플릿 한정) =="
@@ -288,13 +297,13 @@ p_has "P17 confluence 페이지 읽기 명령"       references/confluence.md 'a
 p_has "P18 confluence 공간 목록(키→ID) 명령"  references/confluence.md 'acli confluence space list'
 p_has "P19 confluence 블로그 작성 명령"       references/confluence.md 'acli confluence blog create'
 p_has "P20 blog 본문은 파일로 넘김"           references/confluence.md '\-\-from-file'
-p_has "P21 페이지 생성·수정 불가를 고백"      references/confluence.md '페이지를 만들 수도, 고칠 수도 없습니다'
+p_has "P21 confluence: page create/edit stated impossible" references/confluence.md 'cannot create or edit a page'
 p_has "P22 Jira 와 별개 로그인임을 명시"      references/confluence.md 'acli confluence auth status'
 # P23~P25 — Confluence 쓰기도 Jira 와 똑같이 확인 게이트를 통과해야 한다.
 #           절차는 있는데 게이트가 빠지면, 확인 없이 조직 공간에 글이 올라간다.
-p_has "P23 confluence 쓰기 확인 게이트"       references/confluence.md '확인 게이트'
-p_has "P24 confluence 게이트에 명령 원문 표시" references/confluence.md '실행할 명령 원문'
-p_has "P25 confluence 되돌릴 수 없음을 고지"   references/confluence.md '지울 수 없다'
+p_has "P23 confluence write confirmation gate" references/confluence.md 'Confirmation gate'
+p_has "P24 confluence gate shows exact command" references/confluence.md 'exact command'
+p_has "P25 confluence states it cannot delete"  references/confluence.md 'cannot delete it'
 
 p_has "P1 진입점검: acli --version"          references/entry-check.md 'acli --version'
 p_has "P2 진입점검: acli jira auth status"   references/entry-check.md 'acli jira auth status'
@@ -308,12 +317,12 @@ p_has "P5 진입점검: brew install 설치 안내"   references/entry-check.md 
 p_has "P6 상태전환: 현재 상태 조회"           references/transition.md 'acli jira workitem view <KEY> --fields "status" --json'
 p_has "P7 상태전환: 사용 중 상태 도출에 --paginate 필수" references/transition.md 'workitem search --jql "project = <your-project>"[^`]*--paginate'
 p_has "P8 상태전환: 단일 키 transition 명령"  references/transition.md 'workitem transition --key "<KEY>" --status "<STATUS>"'
-p_has "P9 상태전환: 확인 게이트에서 명령+문구 동시 제시" references/transition.md '확인 게이트'
-p_has "P10 상태전환: 도달 가능 보장 아님을 명시" references/transition.md '보장'
-p_has "P11 쓰기: 확인 게이트 정의"            references/write.md '실행할 명령 원문'
+p_has "P9 transition: confirmation gate shows command + text" references/transition.md 'Confirmation gate'
+p_has "P10 transition: states reachability is not guaranteed" references/transition.md 'not a guarantee'
+p_has "P11 write: confirmation gate defined"   references/write.md 'The exact command'
 p_has "P12 비공개: 검사기 호출"               references/redaction.md 'scan-sensitive.sh'
-p_has "P13 첨부: 다운로드 불가 명시"          references/read.md '내려받기'
-p_has "P14 한계: 전이 목록 조회 불가 명시"     SKILL.md '갈 수 있는 상태'
+p_has "P13 attachments: download stated impossible"          references/read.md 'Download and upload commands do not exist'
+p_has "P14 limit: cannot query transitions"     SKILL.md 'cannot query'
 p_has "P15 근거: 버전 명시"                   SKILL.md '1\.3\.22-stable'
 
 for f in entry-check read transition write redaction command-map errors config value-safety confluence; do
@@ -375,29 +384,29 @@ prose_clean "D4 확인 플래그 부재를 즉시 실행으로 단정하지 않�
 prose_clean "D6 --paginate 미사용을 누락 원인으로 단정하지 않음" D6
 
 # D5 — 생성 결과에 새 키가 없을 때의 방어적 처리가 적혀 있다
-if grep -q '보이지 않으면 지어내지 말고' "$SKILL/references/write.md"; then pass "D5 생성 결과 키 부재 시 방어적 처리 명시 (미관측 단정 제거)"
+if grep -q 'is not visible, do not invent' "$SKILL/references/write.md"; then pass "D5 생성 결과 키 부재 시 방어적 처리 명시 (미관측 단정 제거)"
 else fail "D5 write.md 에 생성 결과 키 방어 처리 문장이 없음"; fi
 
 # D6b — --paginate 기본 동작이 미문서화라는 사실이 적혀 있다
-if grep -q '기본 동작은 도움말에 문서화돼 있지' "$SKILL/references/transition.md"; then pass "D6b --paginate 무플래그 기본 동작이 미문서화임을 명시"
+if grep -q 'default behaviour with no flags at all' "$SKILL/references/transition.md"; then pass "D6b --paginate 무플래그 기본 동작이 미문서화임을 명시"
 else fail "D6b transition.md 에 기본 동작 미문서화 서술이 없음"; fi
 
 # D7 — 검사기가 못 잡는 형태(빗금 없는 브랜치 이름)를 솔직히 적고, 그 책임을 칸 규칙에 넘겼다
 #      두 조각을 모두 요구한다: (1) 못 잡는다는 사실, (2) 그럼 누가 잡는지(첫 번째 그물)
-D7A="$(grep -c '빗금 없는 이름은' "$SKILL/references/redaction.md" || true)"
-D7B="$(grep -c '첫 번째 그물' "$SKILL/references/redaction.md" || true)"
+D7A="$(grep -c 'without a slash' "$SKILL/references/redaction.md" || true)"
+D7B="$(grep -c 'the first net' "$SKILL/references/redaction.md" || true)"
 if [ "${D7A:-0}" -ge 1 ] && [ "${D7B:-0}" -ge 1 ]; then pass "D7 검사기 한계(빗금 없는 브랜치 이름) + 칸 규칙이 그 몫을 진다는 명시"
 else fail "D7 redaction.md 검사기 한계 문장 불완전" "못잡음=${D7A:-0} 첫번째그물=${D7B:-0}"; fi
 
 # D8 — 값 안전 규칙 정본이 value-safety.md 에 있고, 그것을 참조하는 쪽이 실제로 그 파일을 가리킨다
 #      정본이 옮겨졌으므로 요약(command-map)이 아니라 정본 파일을 검사한다. 요약만 남고 정본이
 #      사라지는 상황을 잡으려면 D8V/D8VR 두 조각이 반드시 필요하다.
-D8V="$(grep -c '값 안전 규칙' "$SKILL/references/value-safety.md" || true)"
+D8V="$(grep -c 'alue safety' "$SKILL/references/value-safety.md" || true)"
 D8VR="$(grep -cF '^[A-Z][A-Z0-9]*-[0-9]+$' "$SKILL/references/value-safety.md" || true)"
-D8A="$(grep -c '값 안전 규칙' "$SKILL/references/command-map.md" || true)"
+D8A="$(grep -c 'alue safety' "$SKILL/references/command-map.md" || true)"
 D8R="$(grep -cF '^[A-Z][A-Z0-9]*-[0-9]+$' "$SKILL/references/command-map.md" || true)"
-D8W="$(grep -c '값 안전 규칙' "$SKILL/references/write.md" || true)"
-D8T="$(grep -c '값 안전 규칙' "$SKILL/references/transition.md" || true)"
+D8W="$(grep -c 'alue safety' "$SKILL/references/write.md" || true)"
+D8T="$(grep -c 'alue safety' "$SKILL/references/transition.md" || true)"
 if [ "${D8V:-0}" -ge 1 ] && [ "${D8VR:-0}" -ge 1 ] && [ "${D8A:-0}" -ge 1 ] && [ "${D8R:-0}" -ge 1 ] && [ "${D8W:-0}" -ge 1 ] && [ "${D8T:-0}" -ge 1 ]; then pass "D8 값 안전 규칙 정본(키 모양 검사 포함) + command-map 요약 + write/transition 참조"
 else fail "D8 값 안전 규칙 누락" "value-safety=${D8V:-0} keyshape=${D8VR:-0} command-map=${D8A:-0} cm-keyshape=${D8R:-0} write=${D8W:-0} transition=${D8T:-0}"; fi
 
@@ -414,7 +423,7 @@ else fail "D8b 정본 파일 포인터 끊김" "write=${D8PW:-0} transition=${D8
 D12BAD=""
 D12OK=0
 for f in read write transition; do
-  LINE="$(grep -nE '^(전제:|시작 전)' "$SKILL/references/$f.md" | head -1 || true)"
+  LINE="$(grep -nE '^(Prerequisite:|Prerequisite )' "$SKILL/references/$f.md" | head -1 || true)"
   if printf '%s' "$LINE" | grep -q 'SKILL\.md'; then D12OK=$((D12OK+1))
   else D12BAD="$D12BAD $f.md=[${LINE:-없음}]"; fi
 done
@@ -424,16 +433,16 @@ else fail "D12 전제 줄이 SKILL.md 를 가리키지 않음 (승격 절감이 
 # D13 — 이미 로그인된 사용자에게 재로그인을 요구하지 않는다는 규칙이 SKILL.md 0.5 에도 있다
 #       P5("안내하는 로그인은 --web 하나뿐")와 결합하면, 이 규칙이 없을 때 토큰으로 인증된 사용자에게
 #       불필요한 재로그인을 요구하는 오작동이 나온다.
-if grep -q '다시 로그인하라고 요구하지 않습니다' "$SKILL/SKILL.md"; then pass "D13 SKILL.md 0.5 에 재로그인 금지 규칙 있음"
+if grep -q 'Never ask an already-authenticated user to log in again' "$SKILL/SKILL.md"; then pass "D13 SKILL.md 0.5 에 재로그인 금지 규칙 있음"
 else fail "D13 SKILL.md 에 재로그인 금지 규칙이 없음 (P5 와 결합해 오작동 유발)"; fi
 
 # D14 — 값 안전 규칙 요약(command-map)과 정본이 어긋날 때 정본이 이긴다는 우선순위 명시
-if grep -q '정본이 이깁니다' "$SKILL/references/command-map.md"; then pass "D14 스텁↔정본 우선순위 명시 (발산 시 정본 우선)"
+if grep -q 'canonical file always wins' "$SKILL/references/command-map.md"; then pass "D14 스텁↔정본 우선순위 명시 (발산 시 정본 우선)"
 else fail "D14 command-map 요약에 정본 우선 문장이 없음"; fi
 
 # D11 — 기본 응답의 null 을 "값 없음"으로 단정하지 않는다 (실측된 오독 함정)
 #       라벨·코멘트는 기본 view 응답에 담기지 않아 null 로 오는데, 그걸 "없음"으로 보고하면 거짓이 된다.
-D11A="$(grep -c '담기지 않았다' "$SKILL/references/read.md" || true)"
+D11A="$(grep -c 'Fields not included in the default response' "$SKILL/references/read.md" || true)"
 D11B="$(grep -cF -- '--fields "labels"' "$SKILL/references/read.md" || true)"
 if [ "${D11A:-0}" -ge 1 ] && [ "${D11B:-0}" -ge 1 ]; then pass "D11 기본 응답 null 을 '값 없음'으로 단정하지 않음 + 필드 지정 재조회 명시"
 else fail "D11 read.md 에 null 오독 방지 서술이 없음" "설명=${D11A:-0} 재조회명령=${D11B:-0}"; fi
@@ -444,7 +453,7 @@ if [ -z "$D9" ]; then pass "D9 자기 파일 상대경로 참조 없음 (다른 
 else fail "D9 상대경로 자기참조 발견 (다른 cwd 에서 조용히 실패함)" "$D9"; fi
 
 # D10 — 전이 목록을 못 보는 한계를 Jira 가 아니라 acli(도구)에 귀속시킨다
-if grep -q 'Jira의 한계가 아니라' "$SKILL/references/transition.md"; then pass "D10 전이 목록 한계를 도구(acli)에 귀속 — 안전 문장 보존"
+if grep -q 'not a limit of Jira' "$SKILL/references/transition.md"; then pass "D10 전이 목록 한계를 도구(acli)에 귀속 — 안전 문장 보존"
 else fail "D10 transition.md 에 한계 귀속 문장이 없음"; fi
 
 echo
@@ -482,7 +491,7 @@ CRC=$?
 if [ "$DRC" -eq 1 ]; then pass "F1 민감정보 초안을 검사기가 걸러냄 (exit 1)"
 else fail "F1 민감정보 초안이 통과됨 (exit $DRC)" "$(cat "$TMPD/dirty.out")"; fi
 
-for cat_ in "절대 파일 경로" "소스 파일 경로" "로컬 호스트" "사설 IP 대역" "브랜치 이름" "커밋 해시로 보이는 값" "스택트레이스" "자격증명 키워드" "셸 프롬프트/명령"; do
+for cat_ in "absolute file path" "source file path" "local host" "private IP range" "branch name" "commit-hash-like value" "stack trace" "credential keyword" "shell prompt/command"; do
   if grep -q "$cat_" "$TMPD/dirty.out"; then pass "F2 탐지 범주: $cat_"
   else fail "F2 탐지 실패 범주: $cat_"; fi
 done
@@ -506,10 +515,10 @@ AKRC=$?
 "$SKILL/scripts/scan-sensitive.sh" "$TMPD/seed-tmp.txt" > "$TMPD/seed-tmp.out" 2>&1
 TPRC=$?
 
-if [ "$AKRC" -eq 1 ] && grep -q "자격증명 키워드" "$TMPD/seed-apikey.out"; then pass "F5 공백으로 구분된 'API Key:' 형태를 자격증명으로 탐지 (exit 1)"
+if [ "$AKRC" -eq 1 ] && grep -q "credential keyword" "$TMPD/seed-apikey.out"; then pass "F5 공백으로 구분된 'API Key:' 형태를 자격증명으로 탐지 (exit 1)"
 else fail "F5 공백 구분 API Key 형태를 놓침 (exit $AKRC)" "$(cat "$TMPD/seed-apikey.out")"; fi
 
-if [ "$TPRC" -eq 1 ] && grep -q "절대 파일 경로" "$TMPD/seed-tmp.out"; then pass "F6 /tmp 절대경로를 탐지 (exit 1)"
+if [ "$TPRC" -eq 1 ] && grep -q "absolute file path" "$TMPD/seed-tmp.out"; then pass "F6 /tmp 절대경로를 탐지 (exit 1)"
 else fail "F6 /tmp 절대경로를 놓침 (exit $TPRC)" "$(cat "$TMPD/seed-tmp.out")"; fi
 
 echo

@@ -1,104 +1,109 @@
-# 설정 — 이 스킬은 아무것도 미리 정해두지 않습니다
+# Configuration - this skill decides nothing in advance
 
-이 스킬에는 **설정 파일이 없고, 기본 사이트도 기본 프로젝트도 없습니다.**
-필요한 값은 전부 실행 시점에 얻습니다. 그래서 어느 회사, 어느 Jira, 어느 프로젝트에서도
-그대로 동작합니다.
+This skill has **no config file, no default site, and no default project.**
+Every value it needs is obtained at run time. That is why it works at any company, on any Jira, in
+any project.
 
-값을 이 스킬 안에 적어두는 순간 다른 사람 환경에서는 틀린 값이 됩니다. 그건 고쳐야 할 결함입니다.
+The moment a value is written into this skill, it becomes wrong in someone else's environment. That
+is a defect to be fixed.
 
 ---
 
-## 1. 값이 어디서 오는가
+## 1. Where each value comes from
 
-| 값 | 출처 | 방법 |
+| Value | Source | How |
 |---|---|---|
-| 사이트 주소 | 사용자가 로그인해 둔 acli 세션 | `acli jira auth status` 출력의 `Site:` — **사용자에게 묻지 않습니다** |
-| 계정(이메일) | 같은 출처 | 같은 출력의 `Email:` |
-| 프로젝트 | 사용자의 말 → 목록으로 검증 | 아래 2번 |
-| 작업 유형 | 프로젝트 정보 조회 | 아래 3번 |
-| 상태 이름 | 프로젝트에서 실제 쓰이는 값 조회 | `references/transition.md` 3단계 |
-| 라벨 등 만들 때 요구받은 값 | 프로젝트에서 실제 쓰이는 값 조회 → 사용자 선택 | 아래 5번 |
-| 작업 항목 키 | 사용자의 말 또는 검색 결과 | `references/read.md` 3번 |
-| 담당자 | 사용자의 말 | 추측 금지. 본인은 `@me` |
-| 대화 언어 | 사용자가 쓰는 언어 | 사용자가 한국어면 한국어로 |
+| Site address | The user's own authenticated acli session | `Site:` in `acli jira auth status` output - **never ask the user** |
+| Account (email) | Same source | `Email:` in the same output |
+| Project | The user's words → validated against a list | Section 2 below |
+| Work-item type | Project info lookup | Section 3 below |
+| Status names | Values actually in use in the project | `references/transition.md` step 3 |
+| Labels and other values required at creation | Values actually in use → user picks | Section 5 below |
+| Work-item key | The user's words or a search result | `references/read.md` section 3 |
+| Assignee | The user's words | Never guess. `@me` for themselves |
+| Conversation language | Whatever language the user writes in | Reply in that language |
 
-## 2. 프로젝트 정하기
+## 2. Choosing the project
 
 ```bash
 acli jira project list --json --paginate
 ```
 
-- 사용자가 프로젝트 키를 말했으면 이 목록에 있는지 확인만 하고 씁니다.
-- 모르면 목록을 **이름과 키로** 보여주고 고르게 합니다(원본 JSON을 붙여넣지 않습니다).
-- 목록이 아주 길면 최근 것부터 보여줍니다:
+- If the user named a project key, just confirm it appears in this list and use it.
+- If they do not know it, show the list **by name and key** and let them choose (do not paste the
+  raw JSON).
+- When the list is very long, show recent ones first:
 
   ```bash
   acli jira project list --recent --json
   ```
 
-- 작업 항목 키(`PROJ-123`)의 앞부분이 프로젝트 키인 경우가 일반적이지만 보장은 아닙니다. 앞부분으로
-  먼저 시도하고, 결과가 비거나 오류면 목록으로 확인합니다.
+- The front part of a work-item key (`PROJ-123`) is usually the project key, but that is not
+  guaranteed. Try it first, and if the result is empty or errors, confirm against the list.
 
-## 3. 작업 유형(Task / Bug / …) 알아내기
+## 3. Finding the work-item types (Task / Bug / …)
 
 ```bash
 acli jira project view --key "<your-project>" --json
 ```
 
-- 응답의 `issueTypes` 에 그 프로젝트에서 쓰는 유형들이 들어 있습니다(이름·설명·계층). 확인된
-  동작이며, 프로젝트 **목록** 조회에는 이 정보가 들어 있지 않습니다. 반드시 `project view` 를 씁니다.
-- 유형 이름은 사이트 언어 설정에 따라 한국어로 표시될 수 있습니다. 보이는 이름 그대로 씁니다.
-- 만들기 명령의 `--type` 은 자유 문자열입니다. 이 조회는 **참고용 후보**이지, 허용값 전체 목록을
-  보장하지 않습니다. 그렇게 설명합니다.
+- The response's `issueTypes` holds the types that project uses (name, description, hierarchy). This
+  is confirmed behaviour, and this information is **not** present in the project **list** response -
+  always use `project view`.
+- Type names may display in the site's own language. Use them exactly as shown.
+- `--type` on the create command is a free string. This lookup gives **candidates for reference**,
+  not a guaranteed set of allowed values. Say so.
 
-## 4. 대화 안에서만 기억합니다
+## 4. Remembered only within the conversation
 
-- 한 대화에서 프로젝트를 한 번 정했으면 다시 묻지 않습니다(사용자가 바꾸겠다고 할 때까지).
-- **디스크에 저장하지 않습니다.** 설정 파일을 만들지 않고, 환경변수를 쓰지 않습니다.
-- **자격증명은 어떤 형태로도 보관하지 않습니다.** 로그인 상태 관리는 전적으로 `acli` 의 몫입니다.
+- Once a project is chosen in a conversation, do not ask again (until the user says to change it).
+- **Never write it to disk.** Do not create a config file, do not use environment variables.
+- **Never retain credentials in any form.** Login state is entirely `acli`'s business.
 
-## 5. 만들 때 요구받은 필드의 값 후보 알아내기 (라벨 등)
+## 5. Finding candidate values for a field you were asked for (labels, etc.)
 
-프로젝트가 만들기 단계에서 특정 필드를 **필수로 걸어둘 수 있습니다.** 그런 프로젝트에서는 그 값 없이
-만들면 서버가 거부합니다(`references/write.md` 5-1번). 어떤 필드가 필수인지 미리 조회하는 명령은
-없지만, **거부당한 뒤 그 필드에 무엇을 넣을지**는 추측하지 않고 조회해서 후보를 만들 수 있습니다.
+A project can mark certain fields as **required at creation time.** In such a project, creating
+without that value is rejected (`references/write.md` section 5-1). There is no command that lists
+required fields in advance, but **once rejected**, you can build candidates for that field instead of
+guessing.
 
-원리는 하나입니다: **그 프로젝트의 기존 항목들이 실제로 쓰고 있는 값을 모아서 보여준다.**
-상태 후보를 모으는 방법(`references/transition.md` 3단계)과 같은 방식입니다.
+The principle is one thing: **gather the values the project's existing items actually use.** It is
+the same approach as collecting status candidates (`references/transition.md` step 3).
 
-라벨을 요구받은 경우:
+When labels were required:
 
 ```bash
 acli jira workitem search --jql "project = <your-project> AND labels IS NOT EMPTY" \
   --fields "labels" --json --paginate
 ```
 
-- 결과에서 라벨 값을 모아 **자주 쓰인 순서로** 보여주고 사용자가 고르게 합니다. 원본 JSON을 그대로
-  붙여넣지 않습니다.
-- 다른 필드를 요구받았다면 `--fields` 에 그 필드 이름을 넣어 같은 방식으로 모읍니다.
-- **이 목록은 하한선입니다.** 그 프로젝트에서 쓸 수 있는 값 전부가 아니라, 지금까지 실제로 쓰인
-  값일 뿐입니다. 사용자가 목록에 없는 값을 적으면 그대로 받습니다.
-- 검색 결과가 비어 있으면(그 필드를 쓴 기존 항목이 없으면) 후보를 만들 수 없습니다. 그때는 솔직히
-  말하고 사용자에게 직접 값을 물어봅니다.
-- `--paginate` 를 붙이는 이유는 `references/transition.md` 3단계와 같습니다.
+- Collect the label values and present them **ordered by how often they appear**, then let the user
+  choose. Do not paste the raw JSON.
+- For a different field, put that field name in `--fields` and gather it the same way.
+- **This list is a lower bound.** It is not every value allowed in that project, only the ones used
+  so far. If the user supplies a value not in the list, take it.
+- If the search comes back empty (no existing item uses that field), you cannot build candidates. Say
+  so honestly and ask the user directly.
+- `--paginate` is attached for the same reason as in `references/transition.md` step 3.
 
-## 6. 계정이나 사이트가 여러 개일 때
+## 6. When there are several accounts or sites
 
-`acli` 는 여러 계정을 등록해 두고 전환하는 기능을 갖고 있습니다(`acli jira auth switch`).
-이 스킬은 **사용자 몰래 전환하지 않습니다.** 지금 로그인된 사이트가 사용자가 원하는 곳이 아니면,
-그 사실을 알리고 사용자가 직접 전환하도록 안내한 뒤 진입 점검부터 다시 합니다.
+`acli` can register several accounts and switch between them (`acli jira auth switch`).
+This skill **never switches behind the user's back.** If the currently authenticated site is not
+where they want to work, say so, let them switch themselves, then redo the entry check.
 
-## 7. 이런 값을 발견하면 결함입니다
+## 7. Finding any of these is a defect
 
-이 스킬의 파일 안에 다음이 적혀 있다면 잘못된 것입니다. 지워야 합니다.
+If any of the following appears inside this skill's files, it is wrong and must be deleted.
 
-- 특정 회사의 Jira 사이트 주소
-- 특정 프로젝트 키를 기본값으로 삼는 문장
-- 특정 사람의 이메일/계정
-- 특정 프로젝트의 상태 이름 목록이나 상태 ID 표
-- 특정 프로젝트의 라벨 값 목록, 또는 "라벨에는 보통 이 값을 넣는다"는 식의 기본값
-- **어떤 필드가 필수라고 미리 단정하는 문장** (필수 여부는 프로젝트마다 다르고, 조회할 방법이 없습니다)
-- 특정 컴퓨터의 파일 경로
+- A specific company's Jira site address
+- A sentence treating a specific project key as the default
+- A specific person's email or account
+- A specific project's status names or a status ID table
+- A specific project's label values, or any "labels are usually X" default
+- **A sentence asserting in advance which field is required** (it differs per project, and there is
+  no way to look it up)
+- A file path from a specific machine
 
-자리표시자(`PROJ-123`, `<your-project>`, `YOURSITE.atlassian.net`)는 값이 아니라 빈칸 표시이므로
-괜찮습니다. 다만 **실제 값처럼 보이는 예시는 쓰지 않습니다** — 읽는 사람이 기본값으로 오해합니다.
+Placeholders (`PROJ-123`, `<your-project>`, `YOURSITE.atlassian.net`) are blanks, not values, so they
+are fine. But **do not use examples that look like real values** - readers mistake them for defaults.
