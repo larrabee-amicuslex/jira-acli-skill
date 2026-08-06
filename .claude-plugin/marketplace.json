@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jira-acli-skill",
+  "owner": {
+    "name": "larrabee-amicuslex"
+  },
+  "plugins": [
+    {
+      "name": "jira-acli",
+      "displayName": "Jira 작업 도우미 (acli)",
+      "description": "터미널을 쓰지 않는 사람이 Jira 작업 항목을 읽고, 상태를 바꾸고, 글을 남길 수 있게 돕는 스킬. Atlassian 공식 CLI(acli)로 동작하며 모든 쓰기는 사람 확인을 거칩니다.",
+      "version": "1.0.0",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
