@@ -7,13 +7,17 @@
 ## Install — two lines
 
 ```bash
-claude plugin marketplace add larrabee-amicuslex/jira-acli-skill
+claude plugin marketplace add https://github.com/larrabee-amicuslex/jira-acli-skill.git
 claude plugin install jira-acli@jira-acli-skill
 ```
 
+Use the full **https://** URL. The short `owner/repo` form makes Claude Code clone over SSH, which
+fails on any machine without a GitHub SSH key.
+
 **You do not need to `git clone` this and copy files around.** Those two lines are the whole install.
 
-Inside Claude Code you can type `/plugin marketplace add larrabee-amicuslex/jira-acli-skill`
+Inside Claude Code you can type
+`/plugin marketplace add https://github.com/larrabee-amicuslex/jira-acli-skill.git`
 then `/plugin install jira-acli@jira-acli-skill` instead.
 
 Check it worked:

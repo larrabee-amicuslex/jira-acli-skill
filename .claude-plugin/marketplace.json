@@ -1,15 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "jira-acli-skill",
-  "description": "Atlassian 공식 CLI(acli)로 Jira 작업 항목과 Confluence 문서를 다루는 Claude Code 스킬 배포처.",
+  "description": "Claude Code skill for working with Jira work items and Confluence via the official Atlassian CLI (acli).",
   "owner": {
     "name": "larrabee-amicuslex"
   },
   "plugins": [
     {
       "name": "jira-acli",
-      "displayName": "Jira 작업 도우미 (acli)",
-      "description": "터미널을 쓰지 않는 사람이 Jira 작업 항목을 읽고, 상태를 바꾸고, 글을 남길 수 있게 돕는 스킬. Confluence 페이지·블로그 읽기와 블로그 작성도 다룹니다. 모든 쓰기는 사람 확인을 거칩니다.",
+      "description": "Helps people who do not use a terminal read Jira work items, change their status, and write into Jira. Also reads Confluence pages and blog posts and can publish a blog post. Every write requires explicit human confirmation.",
       "version": "1.0.0",
       "source": "./",
       "category": "productivity"

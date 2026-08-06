@@ -7,13 +7,17 @@
 ## 설치 — 이 두 줄이면 끝입니다
 
 ```bash
-claude plugin marketplace add larrabee-amicuslex/jira-acli-skill
+claude plugin marketplace add https://github.com/larrabee-amicuslex/jira-acli-skill.git
 claude plugin install jira-acli@jira-acli-skill
 ```
 
+**https:// 주소 전체**를 쓰세요. `owner/repo` 축약형을 쓰면 Claude Code가 SSH로 clone 하기 때문에,
+GitHub SSH 키가 없는 컴퓨터에서는 여기서 실패합니다.
+
 **`git clone` 해서 파일을 복사하지 마세요.** 위 두 줄이 설치의 전부입니다.
 
-Claude Code 안에서 직접 치고 싶다면 `/plugin marketplace add larrabee-amicuslex/jira-acli-skill`
+Claude Code 안에서 직접 치고 싶다면
+`/plugin marketplace add https://github.com/larrabee-amicuslex/jira-acli-skill.git`
 → `/plugin install jira-acli@jira-acli-skill` 입니다.
 
 설치 확인:

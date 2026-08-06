@@ -245,6 +245,32 @@ if [ -s "$ROOT/README.ko.md" ] && grep -q 'README.ko.md' "$ROOT/README.md" && gr
   pass "M7 영어/한국어 README 가 모두 존재하고 상호 링크됨"
 else fail "M7 README 두 버전 중 하나가 없거나 상호 링크가 끊김"; fi
 
+# M9 — 매니페스트에 displayName 을 쓰지 않고, 비ASCII 문자를 넣지 않는다.
+#      displayName 은 일부 환경(윈도우)에서 스키마 검증을 실패시킨 사례가 있고, 없어도 name 으로
+#      충분하다. 한글 등 비ASCII 는 인코딩이 다른 환경에서 문제를 만들 수 있어 매니페스트에서는
+#      쓰지 않는다(문서·스킬 본문은 해당 없음).
+M9="$(python3 - "$ROOT" <<'PYN' 2>/dev/null || echo "PYERR"
+import io, json, os, sys
+root = sys.argv[1]; bad = []
+for rel in ('.claude-plugin/marketplace.json', '.claude-plugin/plugin.json'):
+    path = os.path.join(root, rel)
+    try:
+        raw = io.open(path, encoding='utf-8').read()
+        d = json.loads(raw)
+    except Exception as e:
+        bad.append('%s unreadable: %s' % (rel, e)); continue
+    if 'displayName' in d: bad.append('%s: displayName' % rel)
+    for pl in d.get('plugins', []):
+        if 'displayName' in pl: bad.append('%s: plugins[].displayName' % rel)
+    non = sorted({c for c in raw if ord(c) > 127})
+    if non: bad.append('%s: non-ascii %s' % (rel, ''.join(non)[:20]))
+print('; '.join(bad))
+PYN
+)"
+if [ "$M9" = "PYERR" ]; then fail "M9 매니페스트 검사 실행 실패"
+elif [ -z "$M9" ]; then pass "M9 매니페스트에 displayName 없음 + ASCII 전용"
+else fail "M9 매니페스트 문제 (환경에 따라 스키마 검증 실패)" "$M9"; fi
+
 # M8 — claude CLI 가 있으면 공식 검증기를 strict 로 돌린다. 이 검사가 없어서 루트 CLAUDE.md 로 인한
 #      스키마 경고를 놓쳤다. CLI 가 없는 환경에서도 침묵하지 않고 결과를 한 줄 남긴다.
 if command -v claude >/dev/null 2>&1; then
