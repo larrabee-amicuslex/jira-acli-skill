@@ -245,6 +245,16 @@ if [ -s "$ROOT/README.ko.md" ] && grep -q 'README.ko.md' "$ROOT/README.md" && gr
   pass "M7 영어/한국어 README 가 모두 존재하고 상호 링크됨"
 else fail "M7 README 두 버전 중 하나가 없거나 상호 링크가 끊김"; fi
 
+# M10 — .gitattributes 로 LF 를 고정한다.
+#       윈도우 기본값(core.autocrlf=true)으로 clone 하면 파일이 CRLF 로 바뀌고, 셸 스크립트가
+#       $'\r': command not found 로 깨진다. 특히 민감정보 검사기가 조용히 죽는 것이 위험하다.
+#       배포 트리에 CRLF 파일이 섞여 있는지도 함께 본다.
+if [ -s "$ROOT/.gitattributes" ] && grep -q 'eol=lf' "$ROOT/.gitattributes"; then
+  CRLF="$(grep -rlU $'\r' "$SKILL" "$SELF" $DOCS_ALL "$ROOT/.claude-plugin" 2>/dev/null || true)"
+  if [ -z "$CRLF" ]; then pass "M10 .gitattributes 가 LF 고정 + 배포 트리에 CRLF 파일 없음"
+  else fail "M10 CRLF 파일 발견 (윈도우에서 셸 스크립트가 깨진다)" "$CRLF"; fi
+else fail "M10 .gitattributes 가 없거나 eol=lf 지정이 없음 (윈도우 clone 시 CRLF 로 변환됨)"; fi
+
 # M9 — 매니페스트에 displayName 을 쓰지 않고, 비ASCII 문자를 넣지 않는다.
 #      displayName 은 일부 환경(윈도우)에서 스키마 검증을 실패시킨 사례가 있고, 없어도 name 으로
 #      충분하다. 한글 등 비ASCII 는 인코딩이 다른 환경에서 문제를 만들 수 있어 매니페스트에서는

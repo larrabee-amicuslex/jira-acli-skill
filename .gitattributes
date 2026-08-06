@@ -1,0 +1,10 @@
+# Keep LF line endings everywhere, including on Windows checkouts.
+#
+# Why this matters: with core.autocrlf=true (the Windows default), a clone rewrites files to CRLF.
+# The shell scripts here then fail with `$'\r': command not found`, and the sensitive-content
+# scanner silently stops working — which is the one thing that must never fail quietly.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
